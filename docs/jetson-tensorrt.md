@@ -65,7 +65,17 @@ decay): max |Δ| ≤ 6e-7 on outputs, ≤ 9e-6 on the state, all finite.
    exists". Capping the workspace (8 GB) did not help. The failing node moved as each op was rewritten
    (`where` → `cumsum` → `select`), which is what identified the dynamic region itself as the cause: the same
    recurrence **builds in 16 s with static shapes**. TensorRT 10.13 builds the dynamic program.
-3. **TF32.** TensorRT enables TF32 for fp32 GEMMs by default; that moved the recurrent state by 4e-4 on Orin. With
+3. **The engine rejected one-question requests.** `torch.export` records `Dim(min=1)` as `min=2` (0/1
+   specialisation), so the dynamic engine's question and option dimensions start at 2. The probe duplicates a single
+   row / option and slices the result back.
+4. **The fp32 embedding table does not fit an 8 GB Orin Nano as an engine constant** (~1 GB, 248k × 1024 × 4 B;
+   `'...-consts' region allocation failed`). The static program runs the embedding lookup in PyTorch and feeds the
+   engines embeddings; the Nano build also exports every method first and compiles with `offload_module_to_cpu`, and
+   the LoRA merge happens on the CPU (`--load-device cpu`).
+5. **One failed bucket cost a whole run** (the 1024-row score engine on the AGX after three good builds, ~30 min).
+   Built engines are now cached on disk (`--engine-dir`) and a bucket that fails is skipped; questions that need it
+   count as rejected.
+6. **TF32.** TensorRT enables TF32 for fp32 GEMMs by default; that moved the recurrent state by 4e-4 on Orin. With
    `disable_tf32=True` it is 9e-7. The probe now always disables it: a decision model's output is the probability.
 
 ### `kev/trt_static.py` — the JetPack 6 program
@@ -90,7 +100,20 @@ Every shape fixed at export, padding made exact by explicit lengths:
 | dynamic, eager | Orin AGX | 1.2e-6 | 3.0e-7 | 0 |
 | static, eager | RTX 6000 Ada | 1.1e-6 | 2.6e-7 | 0 |
 | static, eager | Orin AGX | 9.2e-7 | 2.6e-7 | 0 |
-| TensorRT engines | — | *in progress* | | |
+| **dynamic, TensorRT 10.13 engines** (TF32 off) | RTX 6000 Ada | **1.04e-6** | 2.1e-7 | **0** |
+| static, TensorRT 10.3 engines | Orin AGX / Orin Nano | *building* | | |
+
+## Latency, reference request (kev README shape: 270-token state, 5 questions × 3 options)
+
+| program | device | p50 | p99 | peak GPU | note |
+|---|---|---|---|---|---|
+| dynamic, TensorRT 10.13 fp32 | RTX 6000 Ada | 205.8 ms | 223.8 ms | 2.9 GB | shared GPU; energy not quoted |
+| static, TensorRT 10.3 fp32 | Orin AGX / Nano | *building* | | | |
+
+For scale: kev's own PyTorch bf16 path on the same card and request shape is ~58 ms (RT-jev measurements). The TensorRT
+program is fp32 end to end — the only precision that has passed parity for this model under TensorRT so far — and pads
+its recurrence to the exported maximum, so it is not expected to beat bf16 PyTorch on a desktop GPU. The question it
+answers is the Jetson one: whether the current Qwen3.5 family can run under TensorRT there at all.
 
 ## Jetson toolchain
 

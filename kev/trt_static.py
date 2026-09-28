@@ -79,9 +79,10 @@ class StaticBackbone(nn.Module):
         y = y.transpose(1, 2).reshape(batch, length, -1) * gate.reshape(batch, length, -1).sigmoid()
         return attn.o_proj(y), torch.stack((k, v))
 
-    def forward(self, tokens, valid, conv_end, start, allow, conv=None, recurrent=None, kv=None):
-        x = self.embed_tokens(tokens)
-        positions = torch.arange(tokens.shape[1], device=tokens.device)[None] + start[:, None]   # [B or 1, L]
+    def forward(self, x, valid, conv_end, start, allow, conv=None, recurrent=None, kv=None):
+        """x: token embeddings [B, L, d]. The embedding lookup runs outside the engine: baked in, the fp32 table of a
+        248k-token vocabulary is a ~1 GB engine constant, which an 8 GB Orin Nano cannot allocate during the build."""
+        positions = torch.arange(x.shape[1], device=x.device)[None] + start[:, None]   # [B or 1, L]
         freqs = positions.float()[..., None] * self.inv_freq
         freqs = torch.cat((freqs, freqs), dim=-1)
         cos, sin = freqs.cos().to(x.dtype), freqs.sin().to(x.dtype)
@@ -102,50 +103,53 @@ class StaticBackbone(nn.Module):
 
 
 class StaticPrefill(nn.Module):
-    """tokens [1, P] (right-padded), n [1] true length -> conv, recurrent, kv [.., P, ..]."""
+    """x [1, P, d] embeddings (right-padded), n [1] true length -> conv, recurrent, kv [.., P, ..]."""
 
     def __init__(self, backbone):
         super().__init__()
         self.backbone = backbone
 
-    def forward(self, tokens, n):
-        P = tokens.shape[1]
-        ar = torch.arange(P, device=tokens.device)
+    def forward(self, x, n):
+        P = x.shape[1]
+        ar = torch.arange(P, device=x.device)
         valid = (ar[None] < n[:, None]).float()
         allow = (ar[None, :] <= ar[:, None])[None, None]                            # causal
-        return self.backbone(tokens, valid, n, torch.zeros_like(n), allow)[1:]
+        return self.backbone(x, valid, n, torch.zeros_like(n), allow)[1:]
 
 
 class StaticScore(nn.Module):
-    """rows [Q, B] (right-padded), prefix state padded to P with true length n [1] -> hidden [Q, B, d]."""
+    """x [Q, B, d] row embeddings (right-padded), prefix state padded to P with true length n [1] -> hidden [Q, B, d]."""
 
     def __init__(self, backbone):
         super().__init__()
         self.backbone = backbone
 
-    def forward(self, tokens, n, conv, recurrent, kv):
-        Q, B = tokens.shape
+    def forward(self, x, n, conv, recurrent, kv):
+        Q, B = x.shape[0], x.shape[1]
         P = kv.shape[-2]
-        kj = torch.arange(P + B, device=tokens.device)
-        qi = torch.arange(B, device=tokens.device)
+        kj = torch.arange(P + B, device=x.device)
+        qi = torch.arange(B, device=x.device)
         allow = ((kj[None, :] < n) | ((kj[None, :] >= P) & (kj[None, :] - P <= qi[:, None])))[None, None]
-        valid = torch.ones(Q, B, device=tokens.device)
-        conv_end = torch.full((Q,), B, dtype=torch.long, device=tokens.device)
-        return self.backbone(tokens, valid, conv_end, n.expand(Q), allow, conv, recurrent, kv)[0]
+        valid = torch.ones(Q, B, device=x.device)
+        conv_end = torch.full((Q,), B, dtype=torch.long, device=x.device)
+        return self.backbone(x, valid, conv_end, n.expand(Q), allow, conv, recurrent, kv)[0]
 
 
 def pick_bucket(n, buckets):
     for b in buckets:
         if n <= b:
             return b
-    raise ValueError(f"{n} tokens exceed the largest exported bucket {buckets[-1]}")
+    from .model import ContextOverflow
+    raise ContextOverflow(f"a {n}-token question row exceeds the largest built score engine ({buckets[-1]} tokens)")
 
 
 class StaticProgram:
     """ExecuTorch Program interface over static engines: `prefill`, `score` and the constant methods."""
 
-    def __init__(self, prefill_engine, score_engines, head, constants, max_prefix, max_questions, pad_id, device="cuda"):
+    def __init__(self, prefill_engine, score_engines, head, constants, max_prefix, max_questions, pad_id, device="cuda",
+                 embed=None):
         self.pre, self.scores, self.head = prefill_engine, dict(sorted(score_engines.items())), head
+        self.embed = embed          # the token embedding (nn.Embedding), run in PyTorch on whatever device it lives on
         self.P, self.Q, self.pad, self.device = max_prefix, max_questions, pad_id, device
         self.constants = constants
         self.method_names = ["prefill", "score", *constants]
@@ -163,21 +167,25 @@ class StaticProgram:
                     return [prog.constants[name]]
         return M()
 
+    def _emb(self, t):
+        w = self.embed.weight
+        return self.embed(t.to(w.device)).to(self.device)
+
     def _prefill(self, tokens):
         S = tokens.shape[1]
-        t = torch.full((1, self.P), self.pad, dtype=torch.long, device=self.device)
-        t[:, :S] = tokens.to(self.device)
-        conv, rec, kv = self.pre(t, torch.tensor([S], device=self.device))
+        t = torch.full((1, self.P), self.pad, dtype=torch.long)
+        t[:, :S] = tokens
+        conv, rec, kv = self.pre(self._emb(t), torch.tensor([S], device=self.device))
         return [conv, rec, kv[..., :S, :]]                  # the contract's kv is the true state length
 
     def _score(self, tokens, decide, options, conv, rec, kv):
         Qn, L = tokens.shape
         B = pick_bucket(L, list(self.scores))
         S = kv.shape[-2]
-        t = torch.full((self.Q, B), self.pad, dtype=torch.long, device=self.device)
-        t[:Qn, :L] = tokens.to(self.device)
+        t = torch.full((self.Q, B), self.pad, dtype=torch.long)
+        t[:Qn, :L] = tokens
         kvp = F.pad(kv, (0, 0, 0, self.P - S))
-        h = self.scores[B](t, torch.tensor([S], device=self.device), conv, rec, kvp)[:Qn].float()
+        h = self.scores[B](self._emb(t), torch.tensor([S], device=self.device), conv, rec, kvp)[:Qn].float()
         rows = torch.arange(Qn, device=self.device)
         hd = h[rows, decide.to(self.device)]                                        # [Q, d]
         ho = h[rows[:, None], options.to(self.device)]                              # [Q, K, d]
