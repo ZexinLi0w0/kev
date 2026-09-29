@@ -1,0 +1,17 @@
+[09/28/2026-05:00:35] [TRT] [W] Functionality provided through tensorrt.plugin module is experimental.
+Unable to import quantization op. Please install modelopt library (https://github.com/NVIDIA/TensorRT-Model-Optimizer?tab=readme-ov-file#installation) to add support for compiling quantized models
+Unable to import quantize op. Please install modelopt library (https://github.com/NVIDIA/TensorRT-Model-Optimizer?tab=readme-ov-file#installation) to add support for compiling quantized models
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[load] jaredpalmer/kev-0.8b in 4.8s
+[eager] {"parity": {"questions": 40, "records_rejected": 0, "max_abs_dp": 7.748603820800781e-07, "mean_abs_dp": 1.5844125300645828e-07, "argmax_flips": 0}, "timing_reference_request": {"tokens": 431, "state_tokens": 271, "questions": 5, "p50_ms": 729.405, "p99_ms": 737.594, "min_ms": 726.353, "max_ms": 737.594, "jitter_p99_p50": 1.011, "cuda_peak_alloc_mb": 3485.6, "power": {"backend": "nvidia-smi", "duration_s": 21.9694, "sample_hz": 20, "rails": {"gpu_board": {"mean_w": 90.337, "max_w": 92.75, "energy_j": 1973.6794, "n_samples": 224, "j_per_decision": 65.7893}}}}}
+WARNING:torch_tensorrt.dynamo._compiler:Dynamic dimension 's11': Input range [1, 384] vs exported program range [2, 384]. Input.min_shape=1 but the exported program's min is 2 (PyTorch 0/1 specialization -- Dim(min=1) is recorded as min=2). The compiled engine's min will be 2.
+WARNING:py.warnings:<string>:6: UserWarning: RuntimeSettings is only honored on TRT-RTX builds; constructing it on regular TensorRT has no effect.
+
+[trt] prefill compiled in 163.4s
+WARNING:torch_tensorrt.dynamo._compiler:Dynamic dimension 's27': Input range [1, 8] vs exported program range [2, 8]. Input.min_shape=1 but the exported program's min is 2 (PyTorch 0/1 specialization -- Dim(min=1) is recorded as min=2). The compiled engine's min will be 2.
+WARNING:torch_tensorrt.dynamo._compiler:Dynamic dimension 's0': Input range [1, 255] vs exported program range [2, 255]. Input.min_shape=1 but the exported program's min is 2 (PyTorch 0/1 specialization -- Dim(min=1) is recorded as min=2). The compiled engine's min will be 2.
+WARNING:torch_tensorrt.dynamo._compiler:Dynamic dimension 's91': Input range [1, 384] vs exported program range [2, 384]. Input.min_shape=1 but the exported program's min is 2 (PyTorch 0/1 specialization -- Dim(min=1) is recorded as min=2). The compiled engine's min will be 2.
+WARNING:torch_tensorrt [TensorRT Conversion Context]:WARNING The logger passed into createInferBuilder differs from one already registered for an existing builder, runtime, or refitter. So the current new logger is ignored, and TensorRT will use the existing one which is returned by nvinfer1::getLogger() instead.
+WARNING:py.warnings:<string>:6: UserWarning: RuntimeSettings is only honored on TRT-RTX builds; constructing it on regular TensorRT has no effect.
+
+[trt] score compiled in 334.1s

@@ -97,6 +97,8 @@ runs/*/*/*
 !runs/*/*/summary.json
 !runs/*/*/report.json
 !runs/leaderboard.md
+# TensorRT / Jetson work (docs/jetson-tensorrt.md): reports, cleaned logs and engine metadata, all small; engines stay out
+!runs/trt-jetson/*/*
 !runs/leaderboard.jsonl
 !runs/autoresearch.jsonl
 # frozen-suite partitions over ~10 MB live on the Hub mirror (jaredpalmer/kev-suites, pinned in kev/suite.py); manifests,

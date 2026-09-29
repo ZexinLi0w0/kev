@@ -1,0 +1,118 @@
+{
+  "run": "jaredpalmer/kev-0.8b",
+  "device": "Orin",
+  "torch": "2.8.0",
+  "backend": "trt-static",
+  "engines": [
+    "prefill",
+    "score128"
+  ],
+  "missing_engines": [],
+  "max_prefix": 2240,
+  "load_s": 47.5,
+  "procedure": "kev scripts/serving_bench.py (latency: CASES, median of reps, new/cached)",
+  "reps": 20,
+  "tensorrt": "10.3.0",
+  "latency": {
+    "2 questions, short state": {
+      "tokens": 89,
+      "first_ms": 1467.9,
+      "new_ms": 1342.1999999999998,
+      "cached_ms": 444.0,
+      "wall_s": 41.85,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 36.383,
+          "j_per_request": 33.8295
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.516,
+          "j_per_request": 2.3407
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 8.838,
+          "j_per_request": 8.2177
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 3.543,
+          "j_per_request": 3.294
+        }
+      }
+    },
+    "6 questions, short state": {
+      "tokens": 253,
+      "first_ms": 486.0,
+      "new_ms": 1342.0,
+      "cached_ms": 446.4,
+      "wall_s": 40.95,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 36.925,
+          "j_per_request": 33.5974
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.444,
+          "j_per_request": 2.2238
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 8.905,
+          "j_per_request": 8.1024
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 3.578,
+          "j_per_request": 3.2553
+        }
+      }
+    },
+    "5 questions, 370-token state": {
+      "tokens": 567,
+      "first_ms": 1341.8,
+      "new_ms": 1341.4,
+      "cached_ms": 446.25,
+      "wall_s": 41.79,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 37.433,
+          "j_per_request": 34.7591
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.4,
+          "j_per_request": 2.2291
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 8.939,
+          "j_per_request": 8.3002
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 3.582,
+          "j_per_request": 3.3263
+        }
+      }
+    },
+    "5 questions, 2,200-token state": {
+      "tokens": 2392,
+      "first_ms": 1342.9,
+      "new_ms": 1342.65,
+      "cached_ms": 446.8,
+      "wall_s": 42.02,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 39.114,
+          "j_per_request": 36.5258
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.451,
+          "j_per_request": 2.289
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 8.938,
+          "j_per_request": 8.3463
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 3.577,
+          "j_per_request": 3.3404
+        }
+      }
+    }
+  }
+}

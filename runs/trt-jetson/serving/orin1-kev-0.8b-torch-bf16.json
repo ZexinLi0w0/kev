@@ -1,0 +1,476 @@
+{
+  "run": "jaredpalmer/kev-0.8b",
+  "device": "Orin",
+  "torch": "2.5.0",
+  "backend": "torch",
+  "dtype": "bf16",
+  "load_s": 9.5,
+  "procedure": "kev scripts/serving_bench.py (latency: CASES, median of reps, new/cached)",
+  "reps": 20,
+  "tensorrt": "10.3.0",
+  "latency": {
+    "2 questions, short state": {
+      "tokens": 89,
+      "first_ms": 1837.0,
+      "new_ms": 245.85000000000002,
+      "cached_ms": 126.1,
+      "wall_s": 10.25,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 8.547,
+          "j_per_request": 1.9169
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.829,
+          "j_per_request": 0.6445
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 5.891,
+          "j_per_request": 1.3361
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 1.464,
+          "j_per_request": 0.3304
+        }
+      }
+    },
+    "6 questions, short state": {
+      "tokens": 253,
+      "first_ms": 927.9,
+      "new_ms": 250.8,
+      "cached_ms": 130.75,
+      "wall_s": 9.64,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 15.513,
+          "j_per_request": 3.3207
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.776,
+          "j_per_request": 0.5945
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 7.274,
+          "j_per_request": 1.5576
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 2.473,
+          "j_per_request": 0.5295
+        }
+      }
+    },
+    "5 questions, 370-token state": {
+      "tokens": 567,
+      "first_ms": 263.7,
+      "new_ms": 250.0,
+      "cached_ms": 129.95,
+      "wall_s": 8.96,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 19.534,
+          "j_per_request": 3.8871
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.819,
+          "j_per_request": 0.561
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 8.355,
+          "j_per_request": 1.6626
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 3.198,
+          "j_per_request": 0.6363
+        }
+      }
+    },
+    "5 questions, 2,200-token state": {
+      "tokens": 2392,
+      "first_ms": 449.3,
+      "new_ms": 448.45,
+      "cached_ms": 133.2,
+      "wall_s": 13.98,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 28.77,
+          "j_per_request": 8.9242
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.489,
+          "j_per_request": 0.7729
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 9.71,
+          "j_per_request": 3.0141
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 4.106,
+          "j_per_request": 1.2742
+        }
+      }
+    }
+  },
+  "throughput": {
+    "6 questions, new short state @ 1 clients": {
+      "p50_ms": 255.1,
+      "p99_ms": 273.1,
+      "requests_per_s": 3.91,
+      "first": {
+        "p50_ms": 238.3,
+        "p99_ms": 239.8,
+        "requests_per_s": 4.19
+      },
+      "requests": 256,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 14.295,
+          "j_per_request": 3.654
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.802,
+          "j_per_request": 0.7161
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 6.891,
+          "j_per_request": 1.7614
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 2.184,
+          "j_per_request": 0.5582
+        }
+      }
+    },
+    "6 questions, new short state @ 8 clients": {
+      "p50_ms": 1675.2,
+      "p99_ms": 1679.8,
+      "requests_per_s": 4.78,
+      "first": {
+        "p50_ms": 1579.9,
+        "p99_ms": 1607.6,
+        "requests_per_s": 5.06
+      },
+      "requests": 256,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 17.217,
+          "j_per_request": 3.6009
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.83,
+          "j_per_request": 0.5924
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 7.445,
+          "j_per_request": 1.5577
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 2.574,
+          "j_per_request": 0.5383
+        }
+      }
+    },
+    "6 questions, new short state @ 32 clients": {
+      "p50_ms": 4891.8,
+      "p99_ms": 5260.0,
+      "requests_per_s": 6.48,
+      "first": {
+        "p50_ms": 4611.9,
+        "p99_ms": 4630.7,
+        "requests_per_s": 6.94
+      },
+      "requests": 256,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 23.266,
+          "j_per_request": 3.5529
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.803,
+          "j_per_request": 0.4318
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 8.627,
+          "j_per_request": 1.3232
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 3.388,
+          "j_per_request": 0.5172
+        }
+      }
+    },
+    "6 questions, new short state @ 64 clients": {
+      "p50_ms": 9203.1,
+      "p99_ms": 9240.2,
+      "requests_per_s": 6.95,
+      "first": {
+        "p50_ms": 8662.8,
+        "p99_ms": 8695.2,
+        "requests_per_s": 7.38
+      },
+      "requests": 256,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 24.774,
+          "j_per_request": 3.5374
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.808,
+          "j_per_request": 0.4048
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 8.925,
+          "j_per_request": 1.2791
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 3.59,
+          "j_per_request": 0.5127
+        }
+      }
+    },
+    "decision-v7 development @ 1 clients": {
+      "p50_ms": 247.6,
+      "p99_ms": 278.4,
+      "requests_per_s": 4.02,
+      "first": {
+        "p50_ms": 233.8,
+        "p99_ms": 258.8,
+        "requests_per_s": 4.26
+      },
+      "requests": 256,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 10.239,
+          "j_per_request": 2.5484
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.621,
+          "j_per_request": 0.6524
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 6.148,
+          "j_per_request": 1.5303
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 1.706,
+          "j_per_request": 0.4246
+        }
+      }
+    },
+    "decision-v7 development @ 8 clients": {
+      "p50_ms": 1604.0,
+      "p99_ms": 1627.5,
+      "requests_per_s": 4.99,
+      "first": {
+        "p50_ms": 1637.0,
+        "p99_ms": 1666.3,
+        "requests_per_s": 4.89
+      },
+      "requests": 256,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 10.9,
+          "j_per_request": 2.1836
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.626,
+          "j_per_request": 0.5259
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 6.269,
+          "j_per_request": 1.2555
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 1.794,
+          "j_per_request": 0.3595
+        }
+      }
+    },
+    "decision-v7 development @ 32 clients": {
+      "p50_ms": 4615.4,
+      "p99_ms": 4944.2,
+      "requests_per_s": 6.88,
+      "first": {
+        "p50_ms": 4488.5,
+        "p99_ms": 4549.6,
+        "requests_per_s": 7.13
+      },
+      "requests": 256,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 12.614,
+          "j_per_request": 1.8342
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.632,
+          "j_per_request": 0.3826
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 6.589,
+          "j_per_request": 0.9582
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 2.019,
+          "j_per_request": 0.2936
+        }
+      }
+    },
+    "decision-v7 development @ 64 clients": {
+      "p50_ms": 8625.2,
+      "p99_ms": 9067.1,
+      "requests_per_s": 7.27,
+      "first": {
+        "p50_ms": 8487.2,
+        "p99_ms": 14391.4,
+        "requests_per_s": 7.58
+      },
+      "requests": 256,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 12.955,
+          "j_per_request": 1.7881
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.638,
+          "j_per_request": 0.3628
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 6.654,
+          "j_per_request": 0.9159
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 2.057,
+          "j_per_request": 0.2836
+        }
+      }
+    },
+    "5 questions, 2,200-token state @ 1 clients": {
+      "p50_ms": 455.3,
+      "p99_ms": 457.3,
+      "requests_per_s": 2.2,
+      "first": {
+        "p50_ms": 449.0,
+        "p99_ms": 450.4,
+        "requests_per_s": 2.23
+      },
+      "requests": 64,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 30.873,
+          "j_per_request": 14.0484
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.42,
+          "j_per_request": 1.1015
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 9.969,
+          "j_per_request": 4.5384
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 4.266,
+          "j_per_request": 1.9414
+        }
+      }
+    },
+    "5 questions, 2,200-token state @ 8 clients": {
+      "p50_ms": 6165.5,
+      "p99_ms": 6178.3,
+      "requests_per_s": 1.3,
+      "first": {
+        "p50_ms": 7412.0,
+        "p99_ms": 7425.9,
+        "requests_per_s": 1.08
+      },
+      "requests": 64,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 33.439,
+          "j_per_request": 25.7392
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.284,
+          "j_per_request": 1.761
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 10.412,
+          "j_per_request": 8.02
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 4.561,
+          "j_per_request": 3.5113
+        }
+      }
+    },
+    "5 questions, 2,200-token state @ 32 clients": {
+      "p50_ms": 49163.7,
+      "p99_ms": 49212.4,
+      "requests_per_s": 0.65,
+      "first": {
+        "p50_ms": 45192.8,
+        "p99_ms": 45218.2,
+        "requests_per_s": 0.71
+      },
+      "requests": 64,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 34.966,
+          "j_per_request": 53.6875
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.202,
+          "j_per_request": 3.3849
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 10.665,
+          "j_per_request": 16.381
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 4.73,
+          "j_per_request": 7.2626
+        }
+      }
+    },
+    "5 questions, 2,200-token state @ 64 clients": {
+      "p50_ms": 102527.8,
+      "p99_ms": 102613.6,
+      "requests_per_s": 0.62,
+      "first": {
+        "p50_ms": 101072.9,
+        "p99_ms": 101162.2,
+        "requests_per_s": 0.63
+      },
+      "requests": 64,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 35.061,
+          "j_per_request": 56.1545
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.192,
+          "j_per_request": 3.5171
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 10.687,
+          "j_per_request": 17.1233
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 4.741,
+          "j_per_request": 7.5934
+        }
+      }
+    }
+  },
+  "peak_cuda_mb": 2713.0
+}

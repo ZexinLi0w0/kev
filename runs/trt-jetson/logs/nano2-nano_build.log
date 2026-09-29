@@ -1,0 +1,18 @@
+idle memory: 2554 used / 7607 MB
+=== build prefill+[none] 2026-09-28T07:39:38-07:00 ===
+[load] jaredpalmer/kev-0.8b in 16.2s
+[trt] exported 1 methods (0 cached or failed)
+ERROR:torch_tensorrt [TensorRT Conversion Context]:[defaultAllocator.cpp::allocate::31] Error Code 1: Cuda Runtime (out of memory)
+ERROR:torch_tensorrt [TensorRT Conversion Context]:Error Code: 9: Skipping tactic 0x0000000000000000 due to exception [region-alloc.cpp:allocate:60] 161943168-byte region '__mye566893-consts' allocation failed.
+ERROR:torch_tensorrt [TensorRT Conversion Context]:IBuilder::buildSerializedNetwork: Error Code 10: Internal Error (Could not find any implementation for node {ForeignNode[backbone.layers.4.input_layernorm/pow_14_rhs_val...[SHUFFLE]-[aten_ops.convolution.default]-[backbone/convolution_3_unsqueeze_conv1d]]}.)
+[trt] static prefill FAILED AssertionError: 
+[done] build-only: []
+=== build prefill+[128] 2026-09-28T07:48:52-07:00 ===
+[load] jaredpalmer/kev-0.8b in 16.3s
+[trt] exported 2 methods (0 cached or failed)
+ERROR:torch_tensorrt [TensorRT Conversion Context]:[defaultAllocator.cpp::allocate::31] Error Code 1: Cuda Runtime (out of memory)
+ERROR:torch_tensorrt [TensorRT Conversion Context]:Error Code: 9: Skipping tactic 0x0000000000000000 due to exception [region-alloc.cpp:allocate:60] 161943168-byte region '__mye566892-consts' allocation failed.
+ERROR:torch_tensorrt [TensorRT Conversion Context]:IBuilder::buildSerializedNetwork: Error Code 10: Internal Error (Could not find any implementation for node {ForeignNode[backbone.layers.4.input_layernorm/pow_14_rhs_val...[SHUFFLE]-[aten_ops.convolution.default]-[backbone/convolution_3_unsqueeze_conv1d]]}.)
+[trt] static prefill FAILED AssertionError: 
+ERROR:torch_tensorrt [TensorRT Conversion Context]:IBuilder::buildSerializedNetwork: Error Code 10: Internal Error (Could not find any implementation for node {ForeignNode[backbone.layers.1.input_layernorm/pow_4_rhs_val...[SHUFFLE]-[aten_ops.convolution.default]-[backbone/convolution_1_unsqueeze_conv1d]]}.)
+[trt] static score128 FAILED AssertionError: 

@@ -1,0 +1,85 @@
+{
+  "run": "jaredpalmer/kev-0.8b",
+  "device": "Orin",
+  "torch": "2.8.0",
+  "args": {
+    "run": "jaredpalmer/kev-0.8b",
+    "records": "/experiment/zexin/kev-fork/evals/smoke-v1/development.jsonl",
+    "n": 30,
+    "max_prefix": 384,
+    "max_context": 1024,
+    "executorch_dir": "/experiment/zexin/executorch",
+    "make_reference": null,
+    "reference": "/experiment/zexin/trt-probe/ref-kev-0.8b-smoke30.json",
+    "stages": "eager,trt",
+    "precision": "fp32",
+    "workspace_mb": 8192,
+    "iters": 30,
+    "warmup": 5,
+    "out": "/experiment/zexin/trt-probe/orin1-kev-0.8b.json"
+  },
+  "stages": {
+    "eager": {
+      "parity": {
+        "questions": 40,
+        "records_rejected": 0,
+        "max_abs_dp": 1.2218952178955078e-06,
+        "mean_abs_dp": 3.0135270208120345e-07,
+        "argmax_flips": 0
+      },
+      "timing_reference_request": {
+        "tokens": 431,
+        "state_tokens": 271,
+        "questions": 5,
+        "p50_ms": 1896.553,
+        "p99_ms": 1979.955,
+        "min_ms": 1889.949,
+        "max_ms": 1979.955,
+        "jitter_p99_p50": 1.044,
+        "cuda_peak_alloc_mb": 3495.4,
+        "power": {
+          "backend": "ina3221",
+          "duration_s": 56.9801,
+          "sample_hz": 100,
+          "rails": {
+            "VDD_GPU_SOC": {
+              "mean_w": 16.376,
+              "max_w": 19.3,
+              "energy_j": 932.8931,
+              "n_samples": 11320,
+              "j_per_decision": 31.0964
+            },
+            "VDD_CPU_CV": {
+              "mean_w": 2.593,
+              "max_w": 3.3,
+              "energy_j": 147.7257,
+              "n_samples": 11320,
+              "j_per_decision": 4.9242
+            },
+            "VIN_SYS_5V0": {
+              "mean_w": 7.052,
+              "max_w": 8.038,
+              "energy_j": 401.7192,
+              "n_samples": 11320,
+              "j_per_decision": 13.3906
+            },
+            "VDDQ_VDD2_1V8AO": {
+              "mean_w": 2.343,
+              "max_w": 3.01,
+              "energy_j": 133.4502,
+              "n_samples": 11320,
+              "j_per_decision": 4.4483
+            }
+          }
+        }
+      }
+    },
+    "trt_fp32": {
+      "error": "AssertionError: ",
+      "trace": "Traceback (most recent call last):\n  File \"/experiment/zexin/kev-fork/scripts/trt_probe.py\", line 253, in main\n    pre_gm, st[\"prefill_compile_s\"] = compile_trt(\n  File \"/experiment/zexin/kev-fork/scripts/trt_probe.py\", line 178, in compile_trt\n    gm = torch_tensorrt.dynamo.compile(ep, arg_inputs=inputs, enabled_precisions={precision},\n  File \"/experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/torch_tensorrt/dynamo/_compiler.py\", line 722, in compile\n    trt_gm = compile_module(\n  File \"/experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/torch_tensorrt/dynamo/_compiler.py\", line 952, in compile_module\n    trt_module = convert_module(\n  File \"/experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/torch_tensorrt/dynamo/conversion/_conversion.py\", line 88, in convert_module\n    interpreter_result = interpret_module_to_result(\n  File \"/experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/torch_tensorrt/dynamo/conversion/_conversion.py\", line 67, in interpret_module_to_result\n    interpreter_result = interpreter.run()\n  File \"/experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/torch_tensorrt/dynamo/conversion/_TRTInterpreter.py\", line 742, in run\n    assert serialized_engine\nAssertionError\n"
+    }
+  },
+  "torch_tensorrt": "2.8.0+cu126",
+  "tensorrt": "10.3.0",
+  "load_s": 6.2
+}

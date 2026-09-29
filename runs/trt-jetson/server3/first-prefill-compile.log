@@ -1,0 +1,11 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[    6.7s] loaded fp32 kev-0.8b
+[    6.9s] eager prefill (18, 1, 6144, 4) (18, 1, 16, 128, 128) (6, 2, 1, 2, 270, 256)
+[   17.6s] torch.export done, graph nodes: 7546
+[09/28/2026-04:53:47] [TRT] [W] Functionality provided through tensorrt.plugin module is experimental.
+Unable to import quantization op. Please install modelopt library (https://github.com/NVIDIA/TensorRT-Model-Optimizer?tab=readme-ov-file#installation) to add support for compiling quantized models
+Unable to import quantize op. Please install modelopt library (https://github.com/NVIDIA/TensorRT-Model-Optimizer?tab=readme-ov-file#installation) to add support for compiling quantized models
+WARNING:torch_tensorrt.dynamo._compiler:Dynamic dimension 's27': Input range [1, 384] vs exported program range [2, 384]. Input.min_shape=1 but the exported program's min is 2 (PyTorch 0/1 specialization -- Dim(min=1) is recorded as min=2). The compiled engine's min will be 2.
+WARNING:py.warnings:<string>:6: UserWarning: RuntimeSettings is only honored on TRT-RTX builds; constructing it on regular TensorRT has no effect.
+
+[   70.4s] torch_tensorrt compile done

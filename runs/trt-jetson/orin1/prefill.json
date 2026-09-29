@@ -1,0 +1,71 @@
+{
+  "source": "prefill.ep",
+  "tensorrt": "10.3.0",
+  "bytes": 987084028,
+  "input_order": [
+    "n",
+    "x"
+  ],
+  "output_order": [
+    "output0",
+    "output1",
+    "output2"
+  ],
+  "io": [
+    [
+      "n",
+      "INPUT",
+      [
+        1
+      ],
+      "INT64"
+    ],
+    [
+      "x",
+      "INPUT",
+      [
+        1,
+        384,
+        1024
+      ],
+      "HALF"
+    ],
+    [
+      "output0",
+      "OUTPUT",
+      [
+        18,
+        1,
+        6144,
+        4
+      ],
+      "HALF"
+    ],
+    [
+      "output1",
+      "OUTPUT",
+      [
+        18,
+        1,
+        16,
+        128,
+        128
+      ],
+      "FLOAT"
+    ],
+    [
+      "output2",
+      "OUTPUT",
+      [
+        6,
+        2,
+        1,
+        2,
+        384,
+        256
+      ],
+      "HALF"
+    ]
+  ],
+  "device_memory_bytes": 273420800
+}

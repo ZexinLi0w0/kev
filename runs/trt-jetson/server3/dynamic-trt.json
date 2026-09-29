@@ -1,0 +1,72 @@
+{
+  "run": "jaredpalmer/kev-0.8b",
+  "device": "NVIDIA RTX 6000 Ada Generation",
+  "torch": "2.15.0.dev20260928+cu130",
+  "args": {
+    "run": "jaredpalmer/kev-0.8b",
+    "records": "/home/zli/new-idea/rtas-jev/kev-fork/evals/smoke-v1/development.jsonl",
+    "n": 30,
+    "max_prefix": 384,
+    "max_context": 1024,
+    "executorch_dir": "/home/zli/new-idea/rtas-jev/executorch",
+    "make_reference": null,
+    "reference": "/home/zli/new-idea/rtas-jev/trt-probe/ref-kev-0.8b-smoke30.json",
+    "stages": "trt",
+    "precision": "fp32",
+    "workspace_mb": null,
+    "engine_dir": null,
+    "offload": false,
+    "load_device": null,
+    "program": "dynamic",
+    "score_buckets": "64,256,1024",
+    "iters": 30,
+    "warmup": 5,
+    "out": "/home/zli/new-idea/rtas-jev/trt-probe/server3-kev-0.8b-dynamic.json"
+  },
+  "stages": {
+    "trt_fp32": {
+      "prefill_compile_s": 177.7,
+      "score_compile_s": 323.3,
+      "parity": {
+        "questions": 40,
+        "records_rejected": 0,
+        "max_abs_dp": 1.043081283569336e-06,
+        "mean_abs_dp": 2.116314135491848e-07,
+        "argmax_flips": 0
+      },
+      "timing_reference_request": {
+        "tokens": 431,
+        "state_tokens": 271,
+        "questions": 5,
+        "p50_ms": 205.808,
+        "p99_ms": 223.831,
+        "min_ms": 194.731,
+        "max_ms": 223.831,
+        "jitter_p99_p50": 1.088,
+        "cuda_peak_alloc_mb": 2918.3,
+        "power": {
+          "backend": "nvidia-smi",
+          "duration_s": 6.2195,
+          "sample_hz": 20,
+          "rails": {
+            "gpu_board": {
+              "mean_w": 261.566,
+              "max_w": 264.21,
+              "energy_j": 1596.8786,
+              "n_samples": 57,
+              "j_per_decision": 53.2293
+            }
+          }
+        }
+      }
+    }
+  },
+  "torch_tensorrt": "2.15.0.dev20260926+cu130",
+  "tensorrt": "11.3.0.99",
+  "load_s": 5.8,
+  "program": {
+    "kind": "dynamic",
+    "max_prefix": 384,
+    "max_context": 1024
+  }
+}

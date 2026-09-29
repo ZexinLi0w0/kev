@@ -1,0 +1,74 @@
+{
+  "run": "jaredpalmer/kev-0.8b",
+  "device": "NVIDIA RTX 6000 Ada Generation",
+  "torch": "2.15.0.dev20260928+cu130",
+  "args": {
+    "run": "jaredpalmer/kev-0.8b",
+    "records": "/home/zli/new-idea/rtas-jev/kev-fork/evals/smoke-v1/development.jsonl",
+    "n": 30,
+    "max_prefix": 384,
+    "max_context": 512,
+    "max_branch": null,
+    "executorch_dir": "/home/zli/new-idea/rtas-jev/executorch",
+    "make_reference": null,
+    "reference": "/home/zli/new-idea/rtas-jev/trt-probe/ref-kev-0.8b-smoke30.json",
+    "stages": "trt",
+    "precision": "fp32",
+    "workspace_mb": null,
+    "engine_dir": null,
+    "offload": false,
+    "load_device": null,
+    "program": "static",
+    "build_only": false,
+    "mixed_fp16": true,
+    "score_buckets": "128,512",
+    "iters": 10,
+    "warmup": 5,
+    "out": "/home/zli/new-idea/rtas-jev/trt-probe/server3-mixedfp16-check.json"
+  },
+  "stages": {
+    "trt_fp32": {
+      "compile_s": {
+        "prefill": 162.4,
+        "score128": 151.8,
+        "score512": 173.7
+      },
+      "failed": {},
+      "score_buckets_built": [
+        128,
+        512
+      ],
+      "engines_resident_mb": 1980.2,
+      "parity": {
+        "questions": 32,
+        "records_rejected": 8,
+        "max_abs_dp": 0.00412064790725708,
+        "mean_abs_dp": 0.0014048093289602548,
+        "argmax_flips": 0
+      },
+      "timing_reference_request": {
+        "tokens": 431,
+        "state_tokens": 271,
+        "questions": 5,
+        "p50_ms": 25.03,
+        "p99_ms": 26.654,
+        "min_ms": 24.607,
+        "max_ms": 26.654,
+        "jitter_p99_p50": 1.065,
+        "cuda_peak_alloc_mb": 2014.0
+      }
+    }
+  },
+  "torch_tensorrt": "2.15.0.dev20260926+cu130",
+  "tensorrt": "11.3.0.99",
+  "load_s": 5.5,
+  "program": {
+    "kind": "static",
+    "max_prefix": 384,
+    "score_buckets": [
+      128,
+      512
+    ],
+    "max_questions": 8
+  }
+}

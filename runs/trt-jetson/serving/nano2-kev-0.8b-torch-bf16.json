@@ -1,0 +1,37 @@
+{
+  "run": "jaredpalmer/kev-0.8b",
+  "device": "Orin",
+  "torch": "2.8.0",
+  "backend": "torch",
+  "dtype": "bf16",
+  "load_s": 11.1,
+  "procedure": "kev scripts/serving_bench.py (latency: CASES, median of reps, new/cached)",
+  "reps": 20,
+  "tensorrt": "10.3.0",
+  "latency": {
+    "2 questions, short state": {
+      "error": "Error in dlopen: /experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/torch/lib/libtorch_cuda_linalg.so: undefined symbol: cusolverDnXsyevBatched_bufferSize, version libcusolver.so.11"
+    },
+    "6 questions, short state": {
+      "error": "Error in dlopen: /experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/torch/lib/libtorch_cuda_linalg.so: undefined symbol: cusolverDnXsyevBatched_bufferSize, version libcusolver.so.11"
+    },
+    "5 questions, 370-token state": {
+      "error": "Error in dlopen: /experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/torch/lib/libtorch_cuda_linalg.so: undefined symbol: cusolverDnXsyevBatched_bufferSize, version libcusolver.so.11"
+    },
+    "5 questions, 2,200-token state": {
+      "error": "Error in dlopen: /experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/torch/lib/libtorch_cuda_linalg.so: undefined symbol: cusolverDnXsyevBatched_bufferSize, version libcusolver.so.11"
+    }
+  },
+  "throughput": {
+    "6 questions, new short state": {
+      "error": "RuntimeError: Error in dlopen: /experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/torch/lib/libtorch_cuda_linalg.so: undefined symbol: cusolverDnXsyevBatched_bufferSize, version libcusolver.so.11"
+    },
+    "decision-v7 development": {
+      "error": "RuntimeError: Error in dlopen: /experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/torch/lib/libtorch_cuda_linalg.so: undefined symbol: cusolverDnXsyevBatched_bufferSize, version libcusolver.so.11"
+    },
+    "5 questions, 2,200-token state": {
+      "error": "RuntimeError: Error in dlopen: /experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/torch/lib/libtorch_cuda_linalg.so: undefined symbol: cusolverDnXsyevBatched_bufferSize, version libcusolver.so.11"
+    }
+  },
+  "peak_cuda_mb": 1851.7
+}

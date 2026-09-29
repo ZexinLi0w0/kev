@@ -1,0 +1,42 @@
+=== p384-b128: prefix 384, buckets [128] 2026-09-28T08:25:02-07:00 ===
+[load] jaredpalmer/kev-0.8b in 6.9s
+[trt] exported 1 methods (1 cached or failed)
+[trt] static prefill: cached
+[trt] static score128: 301.3s
+[done] build-only: ['prefill', 'score128']
+   2599.09 MB prefill.ep
+   2683.48 MB score128.ep
+   2682.53 MB score64.ep
+=== p384-b256: prefix 384, buckets [256] 2026-09-28T08:33:25-07:00 ===
+[load] jaredpalmer/kev-0.8b in 7.2s
+[trt] exported 1 methods (1 cached or failed)
+[trt] static prefill: cached
+[trt] static score256: 283.4s
+[done] build-only: ['prefill', 'score256']
+   2599.09 MB prefill.ep
+   2683.48 MB score128.ep
+   2688.79 MB score256.ep
+   2682.53 MB score64.ep
+=== p384-b1024: prefix 384, buckets [1024] 2026-09-28T08:42:00-07:00 ===
+[load] jaredpalmer/kev-0.8b in 6.7s
+[trt] exported 1 methods (1 cached or failed)
+[trt] static prefill: cached
+[trt] static score1024: 640.3s
+[done] build-only: ['prefill', 'score1024']
+   2599.09 MB prefill.ep
+   2726.15 MB score1024.ep
+   2683.48 MB score128.ep
+   2688.79 MB score256.ep
+   2682.53 MB score64.ep
+=== p2240-prefill: prefix 2240, buckets [] 2026-09-28T09:16:31-07:00 ===
+[load] jaredpalmer/kev-0.8b in 7.1s
+ls: cannot access '/experiment/zexin/trt-engines/kev-0.8b-static-p2240': No such file or directory
+=== p2240-b128: prefix 2240, buckets [128] 2026-09-28T09:16:45-07:00 ===
+[load] jaredpalmer/kev-0.8b in 6.4s
+[trt] exported 2 methods (0 cached or failed)
+[trt] static prefill: 697.7s
+[trt] static score128: 291.7s
+[done] build-only: ['prefill', 'score128']
+   2662.94 MB prefill.ep
+   2685.46 MB score128.ep
+=== AGX builds done 2026-09-28T09:53:00-07:00 ===

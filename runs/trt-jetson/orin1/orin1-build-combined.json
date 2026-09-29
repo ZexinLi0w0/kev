@@ -1,0 +1,43 @@
+{
+  "run": "jaredpalmer/kev-0.8b",
+  "device": "Orin",
+  "torch": "2.8.0",
+  "args": {
+    "run": "jaredpalmer/kev-0.8b",
+    "records": "/experiment/zexin/kev-fork/evals/smoke-v1/development.jsonl",
+    "n": 30,
+    "max_prefix": 384,
+    "max_context": 1024,
+    "executorch_dir": "/experiment/zexin/executorch",
+    "make_reference": null,
+    "reference": null,
+    "stages": "trt",
+    "precision": "fp32",
+    "workspace_mb": 8192,
+    "engine_dir": "/experiment/zexin/trt-engines/kev-0.8b-combined",
+    "offload": false,
+    "load_device": null,
+    "program": "combined",
+    "build_only": true,
+    "score_buckets": "128",
+    "iters": 30,
+    "warmup": 5,
+    "out": "/experiment/zexin/trt-probe/orin1-build-combined.json"
+  },
+  "stages": {
+    "trt_fp32": {
+      "compile_s": 644.6
+    }
+  },
+  "torch_tensorrt": "2.8.0+cu126",
+  "tensorrt": "10.3.0",
+  "load_s": 6.8,
+  "program": {
+    "kind": "combined",
+    "max_prefix": 384,
+    "score_buckets": [
+      128
+    ],
+    "max_questions": 8
+  }
+}

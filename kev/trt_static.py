@@ -2,7 +2,7 @@
 
 JetPack 6 ships TensorRT 10.3. Its Myelin compiler builds the delta rule of `kev.trt_ops` with static shapes but fails on
 every dynamic-shape variant with "Could not find any implementation for node {ForeignNode[...]}" (the failing node moves
-from op to op as each is rewritten, which is how the dynamic region itself was identified as the cause). TensorRT 10.13
+from op to op as each is rewritten, which is how the dynamic region itself was identified as the cause). TensorRT 11.3
 builds the dynamic program (`kev.trt_program`). This module is the same computation with every shape fixed at export and
 the padding made exact by explicit lengths:
 
@@ -168,8 +168,11 @@ class StaticProgram:
         return M()
 
     def _emb(self, t):
+        """Embedding lookup in PyTorch, handed to the engines in the backbone's dtype (fp32, or fp16 for a
+        mixed-precision engine whose recurrence, norms and pointer head stay fp32)."""
         w = self.embed.weight
-        return self.embed(t.to(w.device)).to(self.device)
+        x = self.embed(t.to(w.device)).to(self.device)
+        return x.to(self.x_dtype) if getattr(self, "x_dtype", None) else x
 
     def _prefill(self, tokens):
         S = tokens.shape[1]
@@ -191,3 +194,47 @@ class StaticProgram:
         ho = h[rows[:, None], options.to(self.device)]                              # [Q, K, d]
         z = (self.head.k(ho) * self.head.q(hd)[:, None]).sum(-1) * self.head.scale / self.head.temperature
         return [z]
+
+
+class StaticFull(nn.Module):
+    """State pass and question rows in ONE engine: x_state [1, P, d] (right-padded, true length n) and x_rows [Q, B, d]
+    -> hidden rows [Q, B, d].
+
+    For devices that cannot hold two copies of the weights. On an 8 GB Orin Nano (CPU and GPU share DRAM) separate
+    `prefill` and `score` engines each carry the full fp32 backbone (~2.5 GB each); one engine carries it once. The price
+    is that a cached state saves nothing: the state is recomputed with every request."""
+
+    def __init__(self, backbone):
+        super().__init__()
+        self.prefill, self.score = StaticPrefill(backbone), StaticScore(backbone)
+
+    def forward(self, x_state, n, x_rows):
+        conv, rec, kv = self.prefill(x_state, n)
+        return self.score(x_rows, n, conv, rec, kv)
+
+
+class CombinedProgram(StaticProgram):
+    """ExecuTorch Method interface over one StaticFull engine. `prefill` returns the state's padded embeddings (and its
+    length) as the "prefix"; `score` runs the combined engine on them. Same contract, so ExecuTorchDecisionModel and
+    kev.serve use it unchanged; the prefix cache then caches embeddings, not computation."""
+
+    def __init__(self, full_engine, bucket, head, constants, max_prefix, max_questions, pad_id, device="cuda", embed=None):
+        super().__init__(None, {bucket: full_engine}, head, constants, max_prefix, max_questions, pad_id, device, embed)
+
+    def _prefill(self, tokens):
+        S = tokens.shape[1]
+        t = torch.full((1, self.P), self.pad, dtype=torch.long)
+        t[:, :S] = tokens
+        x = self._emb(t)
+        return [x, torch.tensor([S], device=self.device), x[..., :S, :1]]   # [2]: a float tensor, as the contract reads its dtype
+
+    def _score(self, tokens, decide, options, x_state, n, _):
+        Qn, L = tokens.shape
+        B = pick_bucket(L, list(self.scores))
+        t = torch.full((self.Q, B), self.pad, dtype=torch.long)
+        t[:Qn, :L] = tokens
+        h = self.scores[B](x_state, n, self._emb(t))[:Qn].float()
+        rows = torch.arange(Qn, device=self.device)
+        hd = h[rows, decide.to(self.device)]
+        ho = h[rows[:, None], options.to(self.device)]
+        return [(self.head.k(ho) * self.head.q(hd)[:, None]).sum(-1) * self.head.scale / self.head.temperature]

@@ -1,0 +1,82 @@
+{
+  "source": "score128.ep",
+  "tensorrt": "10.3.0",
+  "bytes": 1016806956,
+  "input_order": [
+    "n",
+    "x",
+    "conv",
+    "recurrent",
+    "kv"
+  ],
+  "output_order": [
+    "output0"
+  ],
+  "io": [
+    [
+      "n",
+      "INPUT",
+      [
+        1
+      ],
+      "INT64"
+    ],
+    [
+      "x",
+      "INPUT",
+      [
+        8,
+        128,
+        1024
+      ],
+      "HALF"
+    ],
+    [
+      "conv",
+      "INPUT",
+      [
+        18,
+        1,
+        6144,
+        4
+      ],
+      "HALF"
+    ],
+    [
+      "recurrent",
+      "INPUT",
+      [
+        18,
+        1,
+        16,
+        128,
+        128
+      ],
+      "FLOAT"
+    ],
+    [
+      "kv",
+      "INPUT",
+      [
+        6,
+        2,
+        1,
+        2,
+        384,
+        256
+      ],
+      "HALF"
+    ],
+    [
+      "output0",
+      "OUTPUT",
+      [
+        8,
+        128,
+        1024
+      ],
+      "HALF"
+    ]
+  ],
+  "device_memory_bytes": 154894336
+}

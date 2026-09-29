@@ -1,0 +1,140 @@
+{
+  "run": "jaredpalmer/kev-0.8b",
+  "device": "Orin",
+  "torch": "2.8.0",
+  "backend": "trt-static",
+  "engines": [
+    "prefill",
+    "score128"
+  ],
+  "missing_engines": [],
+  "max_prefix": 2240,
+  "precision": "fp32",
+  "load_s": 50.0,
+  "procedure": "kev scripts/serving_bench.py (latency: CASES, median of reps, new/cached)",
+  "reps": 20,
+  "tensorrt": "10.3.0",
+  "throughput": {
+    "5 questions, 2,200-token state @ 1 clients": {
+      "p50_ms": 1347.2,
+      "p99_ms": 1349.5,
+      "requests_per_s": 0.74,
+      "first": {
+        "p50_ms": 1346.7,
+        "p99_ms": 1351.3,
+        "requests_per_s": 0.74
+      },
+      "requests": 64,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 39.685,
+          "j_per_request": 53.4866
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.703,
+          "j_per_request": 3.6433
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 8.97,
+          "j_per_request": 12.0902
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 3.522,
+          "j_per_request": 4.7476
+        }
+      }
+    },
+    "5 questions, 2,200-token state @ 8 clients": {
+      "p50_ms": 10714.4,
+      "p99_ms": 10740.1,
+      "requests_per_s": 0.75,
+      "first": {
+        "p50_ms": 10707.9,
+        "p99_ms": 10757.6,
+        "requests_per_s": 0.75
+      },
+      "requests": 64,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 39.941,
+          "j_per_request": 53.5031
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.716,
+          "j_per_request": 3.6384
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 9.003,
+          "j_per_request": 12.0606
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 3.544,
+          "j_per_request": 4.7472
+        }
+      }
+    },
+    "5 questions, 2,200-token state @ 32 clients": {
+      "p50_ms": 42876.0,
+      "p99_ms": 42914.7,
+      "requests_per_s": 0.75,
+      "first": {
+        "p50_ms": 42870.6,
+        "p99_ms": 42885.1,
+        "requests_per_s": 0.75
+      },
+      "requests": 64,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 39.927,
+          "j_per_request": 53.4935
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.725,
+          "j_per_request": 3.6548
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 8.999,
+          "j_per_request": 12.059
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 3.541,
+          "j_per_request": 4.7442
+        }
+      }
+    },
+    "5 questions, 2,200-token state @ 64 clients": {
+      "p50_ms": 82951.7,
+      "p99_ms": 83040.8,
+      "requests_per_s": 0.77,
+      "first": {
+        "p50_ms": 82932.1,
+        "p99_ms": 83018.8,
+        "requests_per_s": 0.77
+      },
+      "requests": 64,
+      "rejected": 0,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 39.952,
+          "j_per_request": 51.8123
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 2.723,
+          "j_per_request": 3.5372
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 9.003,
+          "j_per_request": 11.6793
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 3.546,
+          "j_per_request": 4.6
+        }
+      }
+    }
+  },
+  "peak_cuda_mb": 2969.4
+}

@@ -79,7 +79,7 @@ def gated_delta_rule(q, k, v, g, beta, state, max_len, chunk=64):
     g = g @ torch.triu(torch.ones(chunk, chunk, dtype=torch.float32, device=q.device))
     # Masks are multiplications by constant 0/1 matrices, never torch.where: TensorRT 10.3 (JetPack 6) cannot build a
     # Myelin kernel for the fused where/-inf/exp pattern ("Could not find any implementation for node
-    # {ForeignNode[...where_condition...]}"), while 10.13 can. Above the diagonal g_i - g_j >= 0 (g is a cumulative
+    # {ForeignNode[...where_condition...]}"), while 11.3 can. Above the diagonal g_i - g_j >= 0 (g is a cumulative
     # sum of non-positive log-decays), so it is clamped to 0 before exp and then zeroed: exp(0) * 0, never inf * 0.
     lower = torch.tril(torch.ones(chunk, chunk, dtype=torch.float32, device=q.device))
     strict = torch.tril(torch.ones(chunk, chunk, dtype=torch.float32, device=q.device), -1)
