@@ -1,0 +1,23 @@
+{
+  "run": "jaredpalmer/kev-0.8b",
+  "device": "Orin",
+  "capability": "8.7",
+  "tensorrt": "10.3.0",
+  "modelopt": "0.47.0",
+  "configs": {
+    "INT4_BLOCKWISE_WEIGHT_ONLY_CFG": {
+      "calibrate_s": 125.5,
+      "quantized_linears": 205,
+      "fake_quant_parity": {
+        "questions": 32,
+        "records_rejected": 8,
+        "max_abs_dp": 0.2289542555809021,
+        "mean_abs_dp": 0.03706928361498285,
+        "argmax_flips": 2
+      },
+      "build_failed": {
+        "prefill": "ValueError: quantize converter currently only accept INT8 or FP8 based quantize, got num_bits=4, exponent_bits=0\n\nWhile executing %quantize_op : [num_users=1] = call_function[target=torch.ops.tensorrt.quantize_op.default](args = (%_frozen_param7, %backbone_layers_0_linear_attn_in_proj_qkv_weight_quantizer__amax, 4, 0, False, False), kwargs = {})\nOriginal traceback:\nFile \"/experiment/zexin/kev-fork/kev/trt_static.py\", line 117, in forward\n    return self.backbone(x, valid, n, torch.zeros_like(n), allow)[1:]\n  File \"/experiment/zexin/kev-fork/kev/trt_static.py\", line 94, in forward\n    h, c, r = self._linea"
+      }
+    }
+  }
+}

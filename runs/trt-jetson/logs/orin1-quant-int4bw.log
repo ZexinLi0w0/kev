@@ -1,0 +1,44 @@
+/experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/modelopt/torch/utils/import_utils.py:33: UserWarning: Your device is potentially capable to use triton kernel to speed up quantization simulations. Try to install triton with `pip install triton`.
+  warn_rank_0(msg_if_missing)
+/experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/modelopt/torch/utils/import_utils.py:33: UserWarning: Your device is potentially capable of using the triton attention kernel. Try to install triton with `pip install triton`.
+  warn_rank_0(msg_if_missing)
+/experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/modelopt/torch/__init__.py:55: UserWarning: transformers 5.17.0 is not tested with current version of modelopt and may cause issues. Please install recommended version with `pip install -U nvidia-modelopt[hf]` if working with HF models.
+  _warnings.warn(
+=== INT4_BLOCKWISE_WEIGHT_ONLY_CFG ===
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Inserted 615 quantizers
+Loading extension modelopt_cuda_ext...
+Loaded extension modelopt_cuda_ext in 0.0 seconds
+[fake] {"questions": 32, "records_rejected": 8, "max_abs_dp": 0.2289542555809021, "mean_abs_dp": 0.03706928361498285, "argmax_flips": 2}
+/experiment/zexin/venvs/kev-trt/lib/python3.10/site-packages/torch_tensorrt/fx/tracer/acc_tracer/acc_ops.py:895: UserWarning: Unable to import torchvision related libraries.: No module named 'torchvision'. Please install torchvision lib in order to lower stochastic_depth
+  warnings.warn(
+TensorRT-LLM is not installed. Please install TensorRT-LLM or set TRTLLM_PLUGINS_PATH to the directory containing libnvinfer_plugin_tensorrt_llm.so to use converters for torch.distributed ops
+WARNING:torch_tensorrt.dynamo._compiler:Remaining GPU memory may not be enough to compile the TensorRT engine for this model resulting in an OOM error, Consider setting offload_module_to_cpu=True
+INFO:torch_tensorrt.dynamo._compiler:Partitioning the graph via the fast partitioner
+INFO:torch_tensorrt [TensorRT Conversion Context]:[MemUsageChange] Init CUDA: CPU +2, GPU +0, now: CPU 1271, GPU 15888 (MiB)
+INFO:torch_tensorrt [TensorRT Conversion Context]:[MemUsageChange] Init builder kernel library: CPU +927, GPU +673, now: CPU 2241, GPU 16558 (MiB)
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node n [n] (Inputs: () | Outputs: (n: (1,)@torch.int64))
+WARNING:torch_tensorrt.dynamo.conversion.impl.unsqueeze:IUnsqueezeLayer is supported starting from TensorRT 10.7.0, using the old unsqueeze implementation in the current TensorRT version: 10.3.0
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node /unsqueeze_1 [aten.unsqueeze.default] (Inputs: (n: (1,)@torch.int64, 1) | Outputs: (unsqueeze_1: (1, 1)@torch.int64))
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node /_frozen_param0 [_frozen_param0] (Inputs: () | Outputs: (_frozen_param0: (1, 384)@torch.int64))
+INFO:torch_tensorrt.dynamo.conversion.impl.elementwise.base:skip broadcast for /lt
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node /lt [aten.lt.Tensor] (Inputs: (_frozen_param0: (1, 384)@torch.int64, unsqueeze_1: (1, 1)@torch.int64) | Outputs: (lt: (1, 384)@torch.bool))
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node /_to_copy [aten._to_copy.default] (Inputs: (lt: (1, 384)@torch.bool) | Outputs: (_to_copy: (1, 384)@torch.float32))
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node x [x] (Inputs: () | Outputs: (x: (1, 384, 1024)@torch.float16))
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node backbone.layers.0.input_layernorm/_to_copy_4 [aten._to_copy.default] (Inputs: (x: (1, 384, 1024)@torch.float16) | Outputs: (_to_copy_4: (1, 384, 1024)@torch.float32))
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node backbone.layers.0.input_layernorm/pow_1 [aten.pow.Tensor_Scalar] (Inputs: (_to_copy_4: (1, 384, 1024)@torch.float32, 2) | Outputs: (pow_1: (1, 384, 1024)@torch.float32))
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node backbone.layers.0.input_layernorm/mean [aten.mean.dim] (Inputs: (pow_1: (1, 384, 1024)@torch.float32, [-1], True) | Outputs: (mean: (1, 384, 1)@torch.float32))
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node backbone.layers.0.input_layernorm/add_1 [aten.add.Tensor] (Inputs: (mean: (1, 384, 1)@torch.float32, 1e-06) | Outputs: (add_1: (1, 384, 1)@torch.float32))
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node backbone.layers.0.input_layernorm/sqrt [aten.sqrt.default] (Inputs: (add_1: (1, 384, 1)@torch.float32) | Outputs: (sqrt: (1, 384, 1)@torch.float32))
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node backbone.layers.0.input_layernorm/div [aten.div.Tensor] (Inputs: (1, sqrt: (1, 384, 1)@torch.float32) | Outputs: (div: (1, 384, 1)@torch.float32))
+INFO:torch_tensorrt.dynamo.conversion.impl.elementwise.base:skip broadcast for backbone.layers.0.input_layernorm/mul_1
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node backbone.layers.0.input_layernorm/mul_1 [aten.mul.Tensor] (Inputs: (_to_copy_4: (1, 384, 1024)@torch.float32, div: (1, 384, 1)@torch.float32) | Outputs: (mul_1: (1, 384, 1024)@torch.float32))
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node backbone.layers.0.input_layernorm/_frozen_param6 [_frozen_param6] (Inputs: () | Outputs: (_frozen_param6: (1024,)@torch.float32))
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node backbone.layers.0.input_layernorm/mul_2 [aten.mul.Tensor] (Inputs: (mul_1: (1, 384, 1024)@torch.float32, _frozen_param6: (1024,)@torch.float32) | Outputs: (mul_2: (1, 384, 1024)@torch.float32))
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node backbone.layers.0.input_layernorm/_to_copy_6 [aten._to_copy.default] (Inputs: (mul_2: (1, 384, 1024)@torch.float32) | Outputs: (_to_copy_6: (1, 384, 1024)@torch.float16))
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node backbone.layers.0.linear_attn.in_proj_qkv.weight_quantizer/_frozen_param7 [_frozen_param7] (Inputs: () | Outputs: (_frozen_param7: (49152, 128)@torch.float16))
+INFO:torch_tensorrt.dynamo.conversion._TRTInterpreter:Converted node backbone_layers_0_linear_attn_in_proj_qkv_weight_quantizer__amax [backbone.layers.0.linear_attn.in_proj_qkv.weight_quantizer._amax] (Inputs: () | Outputs: (backbone_layers_0_linear_attn_in_proj_qkv_weight_quantizer__amax: (49152, 1)@torch.float32))
+[trt] prefill FAILED ValueError: quantize converter currently only accept INT8 or FP8 based quantize, got num_bits=4, exponent_bits=0
+
+While executing %quantize_op : [num_users=1] = call_function[target=torch.ops.tensorrt.quantize_op.default](args = (%_frozen_param7, %backbone_layers_0_linear_attn_in_proj_qkv_weight_qua
+[done] /experiment/zexin/trt-probe/orin1-quant-int4bw.json

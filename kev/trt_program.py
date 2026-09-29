@@ -60,9 +60,12 @@ def make_backbone_class(upstream):
             conv_out = history[:, :, -attn.conv_kernel_size:].contiguous()
             qkv = F.silu(F.conv1d(history, attn.conv1d.weight, groups=attn.conv_dim)[:, :, -length:]).transpose(1, 2)
             q, k, v = qkv.split((attn.key_dim, attn.key_dim, attn.value_dim), dim=-1)
-            q = upstream.l2norm(q.reshape(batch, length, -1, attn.head_k_dim).float())
-            k = upstream.l2norm(k.reshape(batch, length, -1, attn.head_k_dim).float())
-            v = v.reshape(batch, length, -1, attn.head_v_dim).float()
+            # unflatten the last dim, not reshape: reshaping these non-contiguous slices has to decide view-vs-copy, and
+            # that depends on whether `length` is 1 (size-1 dims can have any stride), so torch.export would guard
+            # length != 1 and rule out a one-token prefill / one-question score in the exported program
+            q = upstream.l2norm(q.unflatten(-1, (attn.num_k_heads, attn.head_k_dim)).float())
+            k = upstream.l2norm(k.unflatten(-1, (attn.num_k_heads, attn.head_k_dim)).float())
+            v = v.unflatten(-1, (attn.num_v_heads, attn.head_v_dim)).float()
             q = q * attn.head_k_dim ** -0.5
             repeats = attn.num_v_heads // attn.num_k_heads
             if repeats > 1:
@@ -70,8 +73,9 @@ def make_backbone_class(upstream):
                 k = k.repeat_interleave(repeats, dim=2)
             beta = attn.in_proj_b(x).sigmoid().float()
             g = -attn.A_log.float().exp() * F.softplus(attn.in_proj_a(x).float() + attn.dt_bias)
-            y, recurrent_out = gated_delta_rule(q, k, v, g, beta, recurrent.expand(batch, -1, -1, -1),
-                                                max_len=self.max_len, chunk=CHUNK)
+            # the state goes in unexpanded: batch 1 from the prefix cache (static); gated_delta_rule repeats it per row.
+            # expand() here would make the batch symbolic and cost the exported program its one-question score.
+            y, recurrent_out = gated_delta_rule(q, k, v, g, beta, recurrent, max_len=self.max_len, chunk=CHUNK)
             z = attn.in_proj_z(x).reshape(-1, attn.head_v_dim)
             y = attn.norm(y.to(x.dtype).reshape(-1, attn.head_v_dim), z)
             return attn.out_proj(y.reshape(batch, length, -1)), conv_out, recurrent_out

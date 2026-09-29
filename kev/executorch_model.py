@@ -33,8 +33,13 @@ LIMITS = ("prefix", "context", "questions", "options")
 
 def load_program(path):
     """The ExecuTorch program at `path`, with the kernel library the XNNPACK export calls into (llama::gated_delta_rule
-    runs outside the delegate) registered first."""
+    runs outside the delegate) registered first, and the TensorRT delegate when its runtime is installed (programs
+    written by scripts/trt_export_pte.py)."""
     import executorch.extension.llm.custom_ops.custom_ops  # noqa: F401
+    try:
+        import torch_tensorrt_executorch_runtime  # noqa: F401  registers the TensorRT delegate
+    except ImportError:
+        pass
     from executorch.runtime import Runtime
     return Runtime.get().load_program(str(path))
 

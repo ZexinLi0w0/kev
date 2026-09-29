@@ -46,6 +46,12 @@ def power_sampler():
 
 def build_model(a, device):
     from kev.checkpoint import Checkpoint, LoadOptions
+    if a.backend == "executorch":
+        # #69's own path: Checkpoint.load(backend="executorch") -> ExecuTorchDecisionModel over the program
+        ck = Checkpoint(a.run)
+        tok, model = ck.load("cpu", LoadOptions(backend="executorch", program=a.program))
+        return ck, tok, model, {"backend": "executorch", "program": Path(a.program).name,
+                                "program_dtype": getattr(model, "dtype", None)}
     if a.backend == "torch":
         ck = Checkpoint(a.run)
         dtype = {"bf16": torch.bfloat16, "fp32": None, "fp16": torch.float16}[a.dtype]
@@ -240,7 +246,8 @@ def sb_serve_max():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", default="jaredpalmer/kev-0.8b")
-    ap.add_argument("--backend", default="trt-static", choices=["torch", "trt-dynamic", "trt-static", "trt-combined"])
+    ap.add_argument("--backend", default="trt-static", choices=["torch", "trt-dynamic", "trt-static", "trt-combined", "executorch"])
+    ap.add_argument("--program", default=None, help="executorch backend: the .pte (XNNPACK / MLX / TensorRT delegate)")
     ap.add_argument("--dtype", default="bf16", help="torch backend only")
     ap.add_argument("--merge", type=int, default=1, help="torch backend: fold the LoRA in fp32 at load (kev's default)")
     ap.add_argument("--engine-dir")
@@ -258,17 +265,23 @@ def main():
     ap.add_argument("--levels", default="1,8,32,64")
     ap.add_argument("--skip-throughput", action="store_true")
     ap.add_argument("--skip-latency", action="store_true")
+    ap.add_argument("--deviation", default=None, help="free-text note recorded in the report when the run departs from "
+                                                      "upstream's procedure (e.g. fewer client levels)")
     ap.add_argument("--throughput-samples", default=None,
                     help="comma-separated substrings of the upstream sample names to run (e.g. '2,200' for a long-state program)")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
-    device = "cuda"
+    device = "cpu" if a.backend == "executorch" else "cuda"   # an ExecuTorch program runs where its delegate runs
     from kev.serve import Server
     t0 = time.perf_counter()
     ck, tok, model, info = build_model(a, device)
-    report = {"run": a.run, "device": torch.cuda.get_device_name(0), "torch": torch.__version__, **info,
+    import platform
+    dev_name = torch.cuda.get_device_name(0) if device == "cuda" else f"CPU {platform.machine()} ({os.cpu_count()} cores)"
+    report = {"run": a.run, "device": dev_name, "torch": torch.__version__, **info,
               "load_s": round(time.perf_counter() - t0, 1), "procedure": "kev scripts/serving_bench.py (latency: CASES, median of reps, new/cached)",
-              "reps": a.reps}
+              "reps": a.reps, "levels": a.levels}
+    if a.deviation:
+        report["deviation_from_upstream_procedure"] = a.deviation
     try:
         import tensorrt; report["tensorrt"] = tensorrt.__version__
     except Exception:
@@ -287,7 +300,10 @@ def main():
         if not a.skip_throughput:
             only = [x for x in a.throughput_samples.split(",")] if a.throughput_samples else None
             report["throughput"] = throughput(server, a.suite, [int(x) for x in a.levels.split(",")], only); save()
-        report["peak_cuda_mb"] = round(torch.cuda.max_memory_allocated() / 2**20, 1)
+        if device == "cuda":
+            report["peak_cuda_mb"] = round(torch.cuda.max_memory_allocated() / 2**20, 1)
+        else:
+            report["peak_rss_mb"] = round(int(next(l for l in open("/proc/self/status") if l.startswith("VmHWM")).split()[1]) / 1024, 1)
     except Exception as e:
         report["error"] = f"{type(e).__name__}: {e}"; report["trace"] = traceback.format_exc()[-2000:]
     finally:

@@ -1,0 +1,48 @@
+/home/zli/venvs/kev-trt/lib/python3.12/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+/home/zli/venvs/kev-trt/lib/python3.12/site-packages/modelopt/torch/__init__.py:55: UserWarning: transformers 5.17.0 is not tested with current version of modelopt and may cause issues. Please install recommended version with `pip install -U nvidia-modelopt[hf]` if working with HF models.
+  _warnings.warn(
+=== FP8_DEFAULT_CFG ===
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Inserted 615 quantizers
+Loading extension modelopt_cuda_ext_fp8...
+/home/zli/venvs/kev-trt/lib/python3.12/site-packages/modelopt/torch/utils/cpp_extension.py:93: UserWarning: Error building extension 'modelopt_cuda_ext_fp8': [1/2] /usr/local/bin/nvcc -MD -MF tensor_quant_gpu_fp8.cuda.o.d -DTORCH_EXTENSION_NAME=modelopt_cuda_ext_fp8 -DTORCH_API_INCLUDE_EXTENSION_H -isystem /home/zli/venvs/kev-trt/lib/python3.12/site-packages/torch/include -isystem /home/zli/venvs/kev-trt/lib/python3.12/site-packages/torch/include/torch/csrc/api/include -isystem /usr/local/include -isystem /home/zli/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/include/python3.12 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -gencode=arch=compute_89,code=sm_89 --compiler-options '-fPIC' -std=c++20 -c /home/zli/venvs/kev-trt/lib/python3.12/site-packages/modelopt/torch/kernels/quantization/gemm/tensor_quant_gpu_fp8.cu -o tensor_quant_gpu_fp8.cuda.o 
+FAILED: tensor_quant_gpu_fp8.cuda.o 
+/usr/local/bin/nvcc -MD -MF tensor_quant_gpu_fp8.cuda.o.d -DTORCH_EXTENSION_NAME=modelopt_cuda_ext_fp8 -DTORCH_API_INCLUDE_EXTENSION_H -isystem /home/zli/venvs/kev-trt/lib/python3.12/site-packages/torch/include -isystem /home/zli/venvs/kev-trt/lib/python3.12/site-packages/torch/include/torch/csrc/api/include -isystem /usr/local/include -isystem /home/zli/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/include/python3.12 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -gencode=arch=compute_89,code=sm_89 --compiler-options '-fPIC' -std=c++20 -c /home/zli/venvs/kev-trt/lib/python3.12/site-packages/modelopt/torch/kernels/quantization/gemm/tensor_quant_gpu_fp8.cu -o tensor_quant_gpu_fp8.cuda.o 
+<command-line>: fatal error: cuda_runtime.h: No such file or directory
+compilation terminated.
+ninja: build stopped: subcommand failed.
+
+CUDA extension for FP8 quantization could not be built and loaded, FP8 simulated quantization will not be available.
+  warnings.warn(fail_msg)
+[fake] {"questions": 32, "records_rejected": 8, "max_abs_dp": 0.03748738765716553, "mean_abs_dp": 0.009340544289443642, "argmax_flips": 0}
+[09/29/2026-06:44:36] [TRT] [W] Functionality provided through tensorrt.plugin module is experimental.
+WARNING:py.warnings:<string>:6: UserWarning: RuntimeSettings is only honored on TRT-RTX builds; constructing it on regular TensorRT has no effect.
+
+[trt] prefill built in 167.3s
+WARNING:torch_tensorrt [TensorRT Conversion Context]:WARNING The logger passed into createInferBuilder differs from one already registered for an existing builder, runtime, or refitter. So the current new logger is ignored, and TensorRT will use the existing one which is returned by nvinfer1::getLogger() instead.
+WARNING:py.warnings:<string>:6: UserWarning: RuntimeSettings is only honored on TRT-RTX builds; constructing it on regular TensorRT has no effect.
+
+[trt] score128 built in 154.4s
+[trt] parity {"questions": 32, "records_rejected": 8, "max_abs_dp": NaN, "mean_abs_dp": NaN, "argmax_flips": 19} | p50 22.375 ms
+=== INT8_WEIGHT_ONLY_CFG ===
+Inserted 615 quantizers
+Loading extension modelopt_cuda_ext...
+WARNING:py.warnings:/home/zli/venvs/kev-trt/lib/python3.12/site-packages/modelopt/torch/utils/cpp_extension.py:93: UserWarning: Error building extension 'modelopt_cuda_ext': [1/3] /usr/local/bin/nvcc -MD -MF tensor_quant_gpu.cuda.o.d -DTORCH_EXTENSION_NAME=modelopt_cuda_ext -DTORCH_API_INCLUDE_EXTENSION_H -isystem /home/zli/venvs/kev-trt/lib/python3.12/site-packages/torch/include -isystem /home/zli/venvs/kev-trt/lib/python3.12/site-packages/torch/include/torch/csrc/api/include -isystem /usr/local/include -isystem /home/zli/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/include/python3.12 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -gencode=arch=compute_89,code=sm_89 --compiler-options '-fPIC' -std=c++20 -c /home/zli/venvs/kev-trt/lib/python3.12/site-packages/modelopt/torch/kernels/quantization/gemm/tensor_quant_gpu.cu -o tensor_quant_gpu.cuda.o 
+FAILED: tensor_quant_gpu.cuda.o 
+/usr/local/bin/nvcc -MD -MF tensor_quant_gpu.cuda.o.d -DTORCH_EXTENSION_NAME=modelopt_cuda_ext -DTORCH_API_INCLUDE_EXTENSION_H -isystem /home/zli/venvs/kev-trt/lib/python3.12/site-packages/torch/include -isystem /home/zli/venvs/kev-trt/lib/python3.12/site-packages/torch/include/torch/csrc/api/include -isystem /usr/local/include -isystem /home/zli/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/include/python3.12 -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr -gencode=arch=compute_89,code=sm_89 --compiler-options '-fPIC' -std=c++20 -c /home/zli/venvs/kev-trt/lib/python3.12/site-packages/modelopt/torch/kernels/quantization/gemm/tensor_quant_gpu.cu -o tensor_quant_gpu.cuda.o 
+<command-line>: fatal error: cuda_runtime.h: No such file or directory
+compilation terminated.
+[2/3] c++ -MMD -MF tensor_quant.o.d -DTORCH_EXTENSION_NAME=modelopt_cuda_ext -DTORCH_API_INCLUDE_EXTENSION_H -isystem /home/zli/venvs/kev-trt/lib/python3.12/site-packages/torch/include -isystem /home/zli/venvs/kev-trt/lib/python3.12/site-packages/torch/include/torch/csrc/api/include -isystem /usr/local/include -isystem /home/zli/.local/share/uv/python/cpython-3.12.12-linux-x86_64-gnu/include/python3.12 -fPIC -std=c++20 -c /home/zli/venvs/kev-trt/lib/python3.12/site-packages/modelopt/torch/kernels/quantization/gemm/tensor_quant.cpp -o tensor_quant.o 
+ninja: build stopped: subcommand failed.
+
+Unable to load extension modelopt_cuda_ext and falling back to CPU version.
+  warnings.warn(fail_msg)
+
+[fake] {"questions": 32, "records_rejected": 8, "max_abs_dp": 0.012082219123840332, "mean_abs_dp": 0.0021676549804396927, "argmax_flips": 0}
+[trt] prefill FAILED AttributeError: 'NoneType' object has no attribute 'fake_tensor_quant_with_axis'
+
+While executing %quantize_op : [num_users=1] = call_function[target=torch.ops.tensorrt.quantize_op.default](args = (%backbone_layers_0_linear_attn_in_proj_qkv_weight, %backbone_layers_0_linear_attn_in_proj_qkv_weight_q
+[done] /home/zli/new-idea/rtas-jev/trt-probe/server3-quant.json
+WARNING: [Torch-TensorRT] - RuntimeCacheHandle::serialize() invoked on a non-RTX build; returning empty bytes.
+WARNING: [Torch-TensorRT] - RuntimeCacheHandle::serialize() invoked on a non-RTX build; returning empty bytes.

@@ -1,0 +1,98 @@
+{
+  "run": "jaredpalmer/kev-0.8b",
+  "device": "CPU aarch64 (12 cores)",
+  "torch": "2.14.0+cu130",
+  "backend": "executorch",
+  "program": "model.pte",
+  "program_dtype": "float32",
+  "load_s": 7.4,
+  "procedure": "kev scripts/serving_bench.py (latency: CASES, median of reps, new/cached)",
+  "reps": 20,
+  "parity_vs_fp32": {
+    "questions": 40,
+    "records_rejected": 0,
+    "max_abs_dp": 2.9802322387695312e-06,
+    "mean_abs_dp": 4.7190114855766295e-07,
+    "argmax_flips": 0
+  },
+  "latency": {
+    "2 questions, short state": {
+      "tokens": 89,
+      "first_ms": 877.5,
+      "new_ms": 882.6500000000001,
+      "cached_ms": 659.6,
+      "wall_s": 35.13,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 5.825,
+          "j_per_request": 4.3207
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 12.269,
+          "j_per_request": 9.089
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 6.426,
+          "j_per_request": 4.7415
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 1.946,
+          "j_per_request": 1.4325
+        }
+      }
+    },
+    "6 questions, short state": {
+      "tokens": 253,
+      "first_ms": 3165.1,
+      "new_ms": 3406.4,
+      "cached_ms": 3179.1499999999996,
+      "wall_s": 148.4,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 5.691,
+          "j_per_request": 18.3668
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 13.042,
+          "j_per_request": 42.1795
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 6.199,
+          "j_per_request": 20.0176
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 1.794,
+          "j_per_request": 5.7951
+        }
+      }
+    },
+    "5 questions, 370-token state": {
+      "tokens": 567,
+      "first_ms": 4493.4,
+      "new_ms": 4517.35,
+      "cached_ms": 2816.65,
+      "wall_s": 167.84,
+      "power": {
+        "VDD_GPU_SOC": {
+          "mean_w": 5.711,
+          "j_per_request": 20.9487
+        },
+        "VDD_CPU_CV": {
+          "mean_w": 12.712,
+          "j_per_request": 46.8469
+        },
+        "VIN_SYS_5V0": {
+          "mean_w": 6.258,
+          "j_per_request": 22.952
+        },
+        "VDDQ_VDD2_1V8AO": {
+          "mean_w": 1.83,
+          "j_per_request": 6.7343
+        }
+      }
+    },
+    "5 questions, 2,200-token state": {
+      "inadmissible": "state exceeds 384 tokens: 2192; this program was exported for states of at most 384 tokens and 1024 with a question"
+    }
+  }
+}

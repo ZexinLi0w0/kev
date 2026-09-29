@@ -91,7 +91,13 @@ def gated_delta_rule(q, k, v, g, beta, state, max_len, chunk=64):
     value = t @ v_beta
     k_cumdecay = t @ (k_beta * g.exp()[..., None])
 
+    # the recurrent state at the full batch. Broadcasting a batch-1 state (expand(), or implicitly inside the batched
+    # matmuls below) makes torch.export guard batch != 1, which rules out a one-question score in the exported program.
     s = state.float()
+    if s.shape[0] == 1:   # a cached prefix state (batch 1, static): materialise it per row once, then no broadcasting
+        # an index gather, not expand() or repeat(): expand() makes torch.export guard batch != 1 (no one-question score),
+        # and TensorRT cannot convert repeat() with a dynamic count; indexing with B zeros is neither
+        s = s[torch.zeros(B, dtype=torch.long, device=s.device)]
     outs = []
     for i in range(n):                                                 # static trip count: unrolled at export
         qi, ki, gi = q[:, :, i], k[:, :, i], g[:, :, i]

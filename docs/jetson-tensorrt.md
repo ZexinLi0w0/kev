@@ -18,7 +18,7 @@ checkpoint temperature; methods `prefill` and `score`), compile it with Torch-Te
 `kev.executorch_model.ExecuTorchDecisionModel`, so the TensorRT program is held to the same full-partition parity bar
 as the XNNPACK and MLX programs.
 
-## Status (2026-09-28)
+## Status (2026-09-29)
 
 | piece | state |
 |---|---|
@@ -30,7 +30,9 @@ as the XNNPACK and MLX programs.
 | static program, mixed fp16 (`--mixed-fp16`) | Orin AGX and **Orin Nano**: README benchmark done |
 | raw-engine runtime for 8 GB boards (`kev/trt_runtime.py`) | done — what makes the Nano run at all |
 | kev's own PyTorch path, same benchmark | server3 (0.8B); AGX (0.8B / 4B / 9B); Nano: does not run |
-| `.pte` via `output_format="executorch"` | not done — see *Pending* |
+| ExecuTorch XNNPACK `.pte` on the Orin AGX CPU | done: parity 3.0e-6, 0 flips; latency via #69's backend; throughput not measured (stopped — deviation noted) |
+| TensorRT-delegate `.pte` (`output_format="executorch"`) | x86: export in progress; Jetson: blocked (no exporter / runtime build for JetPack 6) |
+| INT8 / INT4 / FP8 (ModelOpt) on the Orin AGX | INT8 weight-only and SmoothQuant built, 0 flips; INT4 fails (accuracy + converter); FP8 refused by the hardware |
 | results | `runs/trt-jetson/serving/README.md` (all tables), raw JSON and logs in `runs/trt-jetson/` |
 
 ## Why upstream's program cannot go to TensorRT as is
@@ -182,6 +184,78 @@ For scale, kev's README documents its own bf16 serving path at up to ~0.03 from 
 5. **Energy per request on the AGX** (5 V system rail): PyTorch bf16 1.3–1.7 J vs TensorRT mixed fp16 1.9–2.0 J on the
    short cases; fp32 static engines 4.2 J.
 
+## ExecuTorch on the Jetsons
+
+**XNNPACK (#69's validated program) runs on the Orin AGX's ARM CPU.** ExecuTorch's aarch64 wheels are cp313 / cp314 and
+JetPack 6 is Python 3.10, so it runs from its own environment (`uv python install 3.13`, `executorch==1.5.1`,
+`torch==2.14`, kev installed `--no-deps`); that torch is a CUDA 13 build and cannot use the Orin's CUDA 12.6 driver,
+which does not matter for a CPU delegate. #69's recipe step was needed: ExecuTorch `main`'s
+`backends/xnnpack/partition/config/{gemm,generic_node}_configs.py` copied over the wheel's (without it the export fails
+with *"XNNPACK reshape only supports 1 dynamic dimension"*). The tokenizer step of the recipe was skipped: it fixes the
+C++ tokenizer, and Kev's Python path uses the Hugging Face one. Export with ExecuTorch's own
+`examples/kev/export.py --backend xnnpack --dtype fp32` on the AGX: 11 min 54 s, 3.08 GB `model.pte`, default limits
+384 / 1024. Served through `kev.executorch_model.ExecuTorchDecisionModel` (`scripts/trt_serving_bench.py --backend executorch`):
+
+| | Kev-0.8B, XNNPACK fp32, Orin AGX CPU (12x A78AE) |
+|---|---|
+| parity vs fp32 PyTorch (smoke-v1) | **max \|Δp\| 3.0e-6, 0 / 40 flips** (fp32-exact, as #69 reports on an M5) |
+| 2 questions, short state (new / cached) | 882.7 / 659.6 ms |
+| 6 questions, short state | 3406.4 / 3179.2 ms |
+| 5 questions, 370-token state | 4517.4 / 2816.7 ms |
+| 5 questions, 2,200-token state | n/a — the default export admits states of at most 384 tokens |
+
+> **Deviation from upstream's procedure — no throughput for this program.** Upstream sweeps 1 / 8 / 32 / 64 clients. At
+> 0.9–4.5 s per request on the CPU, with this backend answering one request at a time, that sweep would have taken ~4 h and
+> would approach 1 / latency. It was stopped at the user's request and restarted at 1 client only (recorded as
+> `deviation_from_upstream_procedure` in that run's report); that single-client run was then also stopped, before it
+> finished, when all Orin AGX workloads were cleared. **So no throughput figure exists for the XNNPACK program**; its
+> latency above is the full upstream procedure and stands. Expected single-client throughput from those latencies:
+> roughly 0.2–1.1 requests/s.
+
+**TensorRT-delegate `.pte` on Jetson: blocked** — see *Pending*: no Jetson build of the exporter
+(`torch_tensorrt.executorch`, Torch-TensorRT >= 2.15) or of the runtime (`torch_tensorrt_executorch_runtime`), and a .pte's
+engines load only on the TensorRT version / GPU that built them, so a server-built one cannot be used on the boards.
+
+**TensorRT-delegate `.pte` on x86: in progress.** `scripts/trt_export_pte.py` writes `prefill` / `score` as TensorRT engines
+plus the contract's constant methods; `kev/executorch_model.load_program` now registers the TensorRT delegate when
+`torch_tensorrt_executorch_runtime` is installed (confirmed: the runtime then lists `TensorRTBackend`). Making the program
+admit what #69's backend actually sends — a one-token `prefill` on load and one-row `score` calls — needed three changes that
+leave the numbers unchanged (eager parity 8.2e-7, 0 flips; 11 unit tests pass): `unflatten` instead of a `reshape` whose
+view-vs-copy decision depends on length == 1; the cached recurrent state passed un-expanded (batch 1, static); and the per-row
+copy of it made with an index gather — `expand()` brings back the `batch != 1` guard and TensorRT cannot convert `repeat()`
+with a dynamic count. With `backed_size_oblivious` the program now exports with questions [1, 8], options [1, 255],
+prefix [1, 384].
+
+## Low-precision quantization (NVIDIA ModelOpt 0.47, Kev-0.8B)
+
+`scripts/trt_quant_probe.py`: the static mixed-fp16 program with ModelOpt applied to the backbone's `nn.Linear` layers only
+(the DeltaNet recurrence, norms and pointer head keep their precision), calibrated on 64 decision-v7 development records
+through Kev's own serving path; each config checked fake-quantized first, then as TensorRT engines on the device. Parity on
+smoke-v1 (32 questions; 8 rejected by the 512-token rows of this program). Reference: mixed fp16 on the AGX, 235.5 ms p50,
+2.97 GB peak.
+
+| config | device | fake-quant max \|Δp\| / flips | TensorRT | engine parity | p50 | peak GPU |
+|---|---|---|---|---|---|---|
+| INT8 weight-only | Orin AGX (sm_87, TRT 10.3) | 0.012 / 0 | **built** (364 + 347 s) | **0.013 / 0** | 234.5 ms | 2.06 GB |
+| INT8 SmoothQuant (W8A8) | Orin AGX | 0.071 / 0 | **built** (416 + 361 s) | 0.059 / 0 | 224.2 ms | 3.03 GB |
+| INT4 AWQ (W4) | Orin AGX | 0.33 / **1** | failed: Torch-TensorRT 2.8 *"quantize converter currently only accept INT8 or FP8 based quantize, got num_bits=4"* | — | — | — |
+| INT4 blockwise weight-only | Orin AGX | 0.23 / **2** | failed: same converter limit | — | — | — |
+| FP8 | Orin AGX | 0.050 / 0 | **failed: TensorRT *"Networks with FP8 Q/DQ layers require hardware with FP8 support"*** | — | — | — |
+| FP8 | RTX 6000 Ada (sm_89, TRT 11.3) | 0.037 / 0 | built (167 + 154 s) | **NaN, 19 / 32 flips** | 22.4 ms | 2.01 GB |
+| INT8 weight-only | RTX 6000 Ada | 0.012 / 0 | failed: ModelOpt CUDA extension (`fake_tensor_quant_with_axis`) missing in that nightly env | — | — | — |
+
+What this says:
+
+* **INT8 works on Orin.** Weight-only INT8 stays well inside the ~0.03 kev accepts for its own bf16 serving and changes no
+  answer; SmoothQuant W8A8 is looser (0.059) but also changes none. At this request size neither is faster than mixed fp16
+  (224–235 vs 235 ms): the GEMMs are not the bottleneck. Weight-only INT8 lowers peak memory (2.06 vs 2.97 GB).
+* **INT4 is out on two counts** at 0.8B: it already changes answers fake-quantized (1–2 of 32), and Torch-TensorRT 2.8 — the
+  only Jetson build — cannot convert 4-bit Q/DQ at all.
+* **FP8 on Orin fails for the hardware reason stated**, now measured: TensorRT refuses FP8 Q/DQ networks on sm_87. On an
+  Ada GPU the engines build and run (22 ms) but return NaNs: ModelOpt's default FP8 recipe is not enough for this model
+  (fp16 activations around the FP8 GEMMs overflow somewhere); making FP8 usable would need per-layer exclusions, which is
+  not Jetson work.
+
 ## Jetson toolchain
 
 | | Orin AGX (orin1) | Orin Nano (nano2) |
@@ -223,18 +297,31 @@ Set `RT_JEV_BENCH` to a directory containing `power.py` (INA3221 / nvidia-smi sa
 
 ## Pending
 
-### ExecuTorch route (the one issue #71 describes) — not yet tried on either board
+### ExecuTorch route (the one issue #71 describes)
 
-- [ ] **x86: write the TensorRT program as a `.pte`** (`torch_tensorrt.save(..., output_format="executorch")` with
+- [~] **x86: write the TensorRT program as a `.pte`** (export in progress, see *ExecuTorch on the Jetsons*) (`torch_tensorrt.save(..., output_format="executorch")` with
       `prefill` / `score` methods and the `get_*` constant methods) and read it back through
       `kev.executorch_model.ExecuTorchDecisionModel` with the ExecuTorch runtime; full-partition parity with
       `scripts/backend_parity.py --backend executorch`. The toolchain is installed (Torch-TensorRT 2.15 nightly,
       TensorRT 11.3, ExecuTorch); the engines run today only through Torch-TensorRT's runtime.
-- [ ] **Jetson: `.pte` with the TensorRT delegate.** Blocked as of 2026-09-28: the only Jetson Torch-TensorRT (2.8,
-      cu126, cp310) predates `output_format="executorch"`, the 2.15 nightlies are server-ARM builds for CUDA 12.9/13.0
-      (JetPack 6 is 12.6), and there is no ExecuTorch runtime with the TensorRT backend for Jetson. Needs either a
-      from-source ExecuTorch + TensorRT backend build on JetPack 6, or JetPack 7 on Orin.
-- [ ] **Jetson: ExecuTorch XNNPACK `.pte` on the ARM CPU** (the program #69 validates, exported by
+- [ ] **Jetson: `.pte` with the TensorRT delegate.** Blocked as of 2026-09-28 by three independent missing pieces:
+      1. *Exporter* -- `output_format="executorch"` / `torch_tensorrt.executorch` exists only in recent Torch-TensorRT
+         (the 2.15 nightlies). NVIDIA's JetPack 6 index has Torch-TensorRT 2.8.0 (cu126) only, without it; PyTorch's
+         aarch64 nightlies are server-ARM (SBSA) builds for CUDA 12.9 / 13.0, which do not run on JetPack 6's CUDA 12.6
+         nor on Orin's integrated-GPU driver.
+      2. *Engine* -- a TensorRT-delegate .pte embeds serialised TensorRT engines, which load only on the TensorRT
+         version and GPU architecture that built them (TRT 11.3 / sm_89 on the server; the Orins need TRT 10.3 / sm_87).
+         A server-exported .pte is therefore not usable on the boards; it has to be produced with Jetson's TensorRT,
+         which leads back to (1).
+      3. *Runtime* -- running it needs an ExecuTorch runtime with the TensorRT delegate registered, which ships as a
+         separate library (`torch_tensorrt_executorch_runtime`); the stock ExecuTorch runtime registers QNN / OpenVINO /
+         CUDA / XNNPACK / VGF only. No Jetson build of that library exists; it would have to be compiled from source
+         against JetPack's CUDA 12.6 / TensorRT 10.3 (untested that old). ExecuTorch's aarch64 wheels are also cp313/314,
+         while JetPack 6 is Python 3.10.
+      Not impossible, but it needs from-source builds of both the exporter toolchain and the runtime on the board;
+      JetPack 7 on Orin would likely remove most of it.
+- [x] **Jetson: ExecuTorch XNNPACK `.pte` on the ARM CPU** — done on the AGX (parity 3.0e-6, 0 flips; latency above).
+      Throughput not measured (stopped at the user's request); the Orin Nano was not tried for this route. (the program #69 validates, exported by
       `examples/kev/export.py --backend xnnpack`). Possible today: aarch64 ExecuTorch 1.5 wheels exist for cp313/cp314,
       so it needs a Python 3.13 venv on the board next to JetPack's 3.10. A CPU baseline for the same README cases.
 
@@ -242,13 +329,18 @@ Set `RT_JEV_BENCH` to a directory containing `power.py` (INA3221 / nvidia-smi sa
 
 - [x] **FP16 (mixed)** — GEMMs in fp16, DeltaNet recurrence / norms / pointer head in fp32, strongly typed engine
       (`--mixed-fp16`). Max |Δp| 4.1e-3 (server) / 4.8e-3 (Orin Nano), 0 flips; README benchmark on AGX and Nano done.
-- [ ] **INT8** — not tried on the Qwen3.5 program. Tried earlier only on the attention-only `kev-0.6b` through ONNX on
+- [x] **INT8** — done on the Orin AGX (weight-only and SmoothQuant both build and keep 0 flips; results above). Tried earlier only on the attention-only `kev-0.6b` through ONNX on
       Orin (TensorRT 10.3 implicit calibration: engine identical to FP16, 10.7% flips; RT-jev work). To try: explicit
       Q/DQ (NVIDIA ModelOpt) weight-only INT8 first, then W8A8 with SmoothQuant, each held to the parity bar.
-- [ ] **INT4** — not tried. Weight-only INT4 (AWQ / blockwise) via ModelOpt Q/DQ; the memory win that would make the
+- [x] **INT4** — tried on the Orin AGX: AWQ and blockwise weight-only both change answers fake-quantized and cannot be
+      converted by Torch-TensorRT 2.8. Would need a newer Torch-TensorRT on Jetson (and a larger checkpoint to hold accuracy). Weight-only INT4 (AWQ / blockwise) via ModelOpt Q/DQ; the memory win that would make the
       4B checkpoint fit an Orin Nano. Parity bar as above.
-- [ ] **FP8** — **not possible on Orin**: Ampere (sm_87) has no FP8 tensor cores (Ada / Hopper and later). Can be
-      measured on the server's RTX 6000 Ada (sm_89) as a reference point only.
+- [x] **FP8** — tried: TensorRT 10.3 refuses FP8 Q/DQ on the Orin (sm_87) — "require hardware with FP8 support";
+      on an RTX 6000 Ada (sm_89) it builds but the default ModelOpt FP8 recipe gives NaNs. Background: **no FP8 compute on Orin.** Orin's GPU is Ampere-class (sm_87): its tensor cores do FP16 / BF16 / TF32 /
+      INT8 but have no FP8 instructions, and TensorRT's FP8 kernels need Ada (sm_89) or Hopper (sm_90). FP8 *storage*
+      with dequantisation to fp16 before each GEMM would still save memory but gives no speed-up there -- weight-only
+      INT8 / INT4 does the same job and Ampere has native INT8 tensor cores. The server's RTX 6000 Ada (sm_89) can run
+      FP8 natively, as a reference point.
 
 ### Other
 
