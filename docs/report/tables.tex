@@ -1,0 +1,63 @@
+\begin{table}[!htbp]\centering\small
+\caption{Latency, kev README serving procedure: median model time per request (ms), \textbf{new state / same state again}. $^\dagger$ state longer than the program admits.}\label{tab:latency}
+\resizebox{\textwidth}{!}{\begin{tabular}{lllcccc}\toprule
+Device & Model & Path & 2 q, short & 6 q, short & 5 q, 370 tok & 5 q, 2{,}200 tok \\\midrule
+RTX 6000 Ada & Kev-0.8B & PyTorch bf16 & 94.3 / 48.5 & 105.1 / 59.9 & 128.8 / 57.7 & 278.6 / 60.4 \\
+RTX 6000 Ada & Kev-0.8B & TensorRT 11.3 dyn. fp32 & 46.1 / 11.2 & 71.7 / 36.1 & 81.8 / 31.2 & 234.6 / 35.5 \\
+Orin AGX 32GB & Kev-0.8B & ExecuTorch XNNPACK fp32 (CPU) & 882.7 / 659.6 & 3406.4 / 3179.1 & 4517.4 / 2816.7 & n/a$^\dagger$ \\
+Orin AGX 32GB & Kev-0.8B & PyTorch bf16 & 245.9 / 126.1 & 250.8 / 130.8 & 250.0 / 129.9 & 448.4 / 133.2 \\
+Orin AGX 32GB & Kev-0.8B & TensorRT 10.3.0 static P=2240 fp32 & 1342.2 / 444.0 & 1342.0 / 446.4 & 1341.4 / 446.2 & 1342.7 / 446.8 \\
+Orin AGX 32GB & Kev-0.8B & TensorRT 10.3.0 static P=384 fp32 & 561.9 / 392.6 & 562.0 / 393.8 & 562.1 / 393.6 & n/a$^\dagger$ \\
+Orin AGX 32GB & Kev-0.8B & TensorRT 10.3.0 static P=384 mixed fp16 & 235.4 / 155.4 & 235.6 / 156.4 & 235.5 / 156.4 & n/a$^\dagger$ \\
+Orin AGX 32GB & Kev-4B & PyTorch bf16 & 315.9 / 162.1 & 421.2 / 266.8 & 453.0 / 233.8 & 1511.5 / 288.1 \\
+Orin AGX 32GB & Kev-9B & PyTorch bf16 (LoRA unmerged) & 472.3 / 240.3 & 724.4 / 492.8 & 811.7 / 411.6 & 2798.8 / 466.7 \\
+Orin Nano 8GB & Kev-0.8B & PyTorch bf16 & error & error & error & error \\
+Orin Nano 8GB & Kev-0.8B & TensorRT 10.3.0 static P=384 mixed fp16 & 766.2 / 513.3 & 767.0 / 514.7 & 767.2 / 514.8 & n/a$^\dagger$ \\
+\bottomrule\end{tabular}}\end{table}
+
+\begin{table}[!htbp]\centering\small
+\caption{Throughput (requests/s) at 1 / 8 / 32 / 64 concurrent clients, and p50 / p99 latency (ms) at 64 clients. Rejected = requests with a question row longer than the program's largest engine.}\label{tab:throughput}
+\resizebox{\textwidth}{!}{\begin{tabular}{llllcc c}\toprule
+Device & Model & Path & Traffic & req/s @1/8/32/64 & p50/p99 @64 & rej. \\\midrule
+RTX 6000 Ada & Kev-0.8B & PyTorch bf16 & 5 questions, 2,200-token state & 3.57 / 2.98 / 1.42 / 1.40 & 45646.9 / 45783.5 & 0 \\
+RTX 6000 Ada & Kev-0.8B & PyTorch bf16 & 6 questions, new short state & 9.03 / 10.56 / 13.05 / 13.27 & 4807.8 / 4884.8 & 0 \\
+RTX 6000 Ada & Kev-0.8B & PyTorch bf16 & decision-v7 development & 9.52 / 10.51 / 14.63 / 14.72 & 4149.1 / 7545.2 & 0 \\
+RTX 6000 Ada & Kev-0.8B & TensorRT 11.3 dyn. fp32 & 5 questions, 2,200-token state & 3.76 / 3.77 / 3.75 / 3.80 & 16790.4 / 16855.6 & 0 \\
+RTX 6000 Ada & Kev-0.8B & TensorRT 11.3 dyn. fp32 & 6 questions, new short state & 12.98 / 13.27 / 13.14 / 13.09 & 4879.2 / 4944.9 & 0 \\
+RTX 6000 Ada & Kev-0.8B & TensorRT 11.3 dyn. fp32 & decision-v7 development & 17.52 / 17.84 / 17.91 / 17.92 & 3550.7 / 3589.7 & 24 \\
+Orin AGX 32GB & Kev-0.8B & PyTorch bf16 & 5 questions, 2,200-token state & 2.20 / 1.30 / 0.65 / 0.62 & 102527.8 / 102613.6 & 0 \\
+Orin AGX 32GB & Kev-0.8B & PyTorch bf16 & 6 questions, new short state & 3.91 / 4.78 / 6.48 / 6.95 & 9203.1 / 9240.2 & 0 \\
+Orin AGX 32GB & Kev-0.8B & PyTorch bf16 & decision-v7 development & 4.02 / 4.99 / 6.88 / 7.27 & 8625.2 / 9067.1 & 0 \\
+Orin AGX 32GB & Kev-0.8B & TensorRT 10.3.0 static P=384 fp32 & 5 questions, 2,200-token state & n/a & & \\
+Orin AGX 32GB & Kev-0.8B & TensorRT 10.3.0 static P=384 fp32 & 6 questions, new short state & 1.77 / 1.78 / 1.77 / 1.78 & 36039.6 / 36115.4 & 0 \\
+Orin AGX 32GB & Kev-0.8B & TensorRT 10.3.0 static P=384 fp32 & decision-v7 development & 1.23 / 1.23 / 1.23 / 1.23 & 49267.1 / 57514.3 & 0 \\
+Orin AGX 32GB & Kev-0.8B & TensorRT 10.3.0 static P=384 mixed fp16 & 5 questions, 2,200-token state & n/a & & \\
+Orin AGX 32GB & Kev-0.8B & TensorRT 10.3.0 static P=384 mixed fp16 & 6 questions, new short state & 4.18 / 4.22 / 4.22 / 4.21 & 15203.3 / 15265.5 & 0 \\
+Orin AGX 32GB & Kev-0.8B & TensorRT 10.3.0 static P=384 mixed fp16 & decision-v7 development & 3.06 / 3.07 / 3.07 / 3.06 & 19893.9 / 22811.8 & 0 \\
+Orin AGX 32GB & Kev-4B & PyTorch bf16 & 5 questions, 2,200-token state & 0.66 / 0.29 / 0.17 / 0.17 & 387471.3 / 387562.8 & 0 \\
+Orin AGX 32GB & Kev-4B & PyTorch bf16 & 6 questions, new short state & 2.36 / 2.44 / 2.53 / 2.54 & 25140.6 / 25183.4 & 0 \\
+Orin AGX 32GB & Kev-4B & PyTorch bf16 & decision-v7 development & 3.00 / 3.62 / 4.69 / 4.89 & 12784.9 / 14449.6 & 0 \\
+Orin AGX 32GB & Kev-9B & PyTorch bf16 (LoRA unmerged) & 5 questions, 2,200-token state & 0.35 / 0.16 / 0.09 / 0.09 & 717079.4 / 717171.4 & 0 \\
+Orin AGX 32GB & Kev-9B & PyTorch bf16 (LoRA unmerged) & 6 questions, new short state & 1.37 / 1.37 / 1.37 / 1.35 & 47080.2 / 48157.2 & 0 \\
+Orin AGX 32GB & Kev-9B & PyTorch bf16 (LoRA unmerged) & decision-v7 development & 1.88 / 2.23 / 2.77 / 2.94 & 21166.4 / 25957.6 & 0 \\
+Orin Nano 8GB & Kev-0.8B & PyTorch bf16 & 5 questions, 2,200-token state & error & & \\
+Orin Nano 8GB & Kev-0.8B & PyTorch bf16 & 6 questions, new short state & error & & \\
+Orin Nano 8GB & Kev-0.8B & PyTorch bf16 & decision-v7 development & error & & \\
+Orin Nano 8GB & Kev-0.8B & TensorRT 10.3.0 static P=384 mixed fp16 & 5 questions, 2,200-token state & n/a & & \\
+Orin Nano 8GB & Kev-0.8B & TensorRT 10.3.0 static P=384 mixed fp16 & 6 questions, new short state & 1.29 / 1.30 / 1.30 / 1.30 & 49318.1 / 49347.1 & 0 \\
+Orin Nano 8GB & Kev-0.8B & TensorRT 10.3.0 static P=384 mixed fp16 & decision-v7 development & 1.30 / 1.30 / 1.31 / 1.30 & 49104.6 / 62882.0 & 24 \\
+\bottomrule\end{tabular}}\end{table}
+
+\begin{table}[!htbp]\centering\small
+\caption{Energy per request (J) on the Jetson power rails (Orin AGX: \texttt{VIN\_SYS\_5V0}; Orin Nano: \texttt{VDD\_IN}, whole module). Compare within a board only.}\label{tab:energy}
+\resizebox{\textwidth}{!}{\begin{tabular}{lllcccc}\toprule
+Device & Model & Path & 2 q & 6 q & 370 tok & 2{,}200 tok \\\midrule
+Orin AGX 32GB & Kev-0.8B & ExecuTorch XNNPACK fp32 (CPU) & 4.74 & 20.02 & 22.95 & -- \\
+Orin AGX 32GB & Kev-0.8B & PyTorch bf16 & 1.34 & 1.56 & 1.66 & 3.01 \\
+Orin AGX 32GB & Kev-0.8B & TensorRT 10.3.0 static P=2240 fp32 & 8.22 & 8.10 & 8.30 & 8.35 \\
+Orin AGX 32GB & Kev-0.8B & TensorRT 10.3.0 static P=384 fp32 & 4.21 & 4.23 & 4.32 & -- \\
+Orin AGX 32GB & Kev-0.8B & TensorRT 10.3.0 static P=384 mixed fp16 & 1.92 & 1.97 & 1.99 & -- \\
+Orin AGX 32GB & Kev-4B & PyTorch bf16 & 2.18 & 3.70 & 3.87 & 10.52 \\
+Orin AGX 32GB & Kev-9B & PyTorch bf16 (LoRA unmerged) & 3.50 & 6.59 & 7.08 & 20.20 \\
+Orin Nano 8GB & Kev-0.8B & TensorRT 10.3.0 static P=384 mixed fp16 & 8.16 & 8.12 & 8.21 & -- \\
+\bottomrule\end{tabular}}\end{table}

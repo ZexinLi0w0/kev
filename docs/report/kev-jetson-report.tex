@@ -1,0 +1,103 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{booktabs,array,xcolor,enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{graphicx}
+\usepackage[section]{placeins}
+\usepackage[strings]{underscore}\sloppy
+\setlist{itemsep=1pt,topsep=2pt}
+\title{Kev on NVIDIA Jetson: TensorRT, ExecuTorch and Low-Precision Measurements\\[2pt]\large Measurement record for jaredpalmer/kev\#71 (fork \texttt{ZexinLi0w0/kev}, branch \texttt{jetson-tensorrt})}
+\author{Zexin Li}
+\date{2026-09-29}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We measure the Kev decision models (a Jev-style reconstruction on Qwen3.5 bases) on an RTX~6000~Ada workstation GPU, a Jetson AGX Orin 32\,GB and a Jetson Orin Nano 8\,GB, following Kev's own README serving benchmark. Kev's PyTorch path runs on the AGX but not on the Nano. We make the Qwen3.5 checkpoints compilable by TensorRT through a TensorRT-lowerable Gated DeltaNet recurrence, a static-shape program for JetPack~6's TensorRT~10.3, and a raw-engine runtime for 8\,GB boards. With these, Kev-0.8B runs on the Orin Nano for the first time (767\,/\,513\,ms new\,/\,cached, 0 answer flips vs fp32). On the AGX, TensorRT matches Kev's PyTorch path only in mixed fp16; INT8 weight-only and SmoothQuant build and keep 0 flips; INT4 loses accuracy and cannot be converted by the Jetson Torch-TensorRT; FP8 is refused by the hardware. ExecuTorch's XNNPACK program runs on the AGX CPU with fp32-exact answers; the TensorRT-delegate \texttt{.pte} route is blocked on Jetson.
+\end{abstract}
+
+\section{Setup}
+\noindent\resizebox{\textwidth}{!}{\begin{tabular}{@{}lll@{}}\toprule
+Device & Software & Notes\\\midrule
+RTX 6000 Ada (sm\_89), server3 & torch 2.15 nightly (cu130), Torch-TensorRT 2.15, TensorRT 11.3 & shared machine; card power only\\
+Jetson AGX Orin 32\,GB (sm\_87) & JetPack R36.4.7, CUDA 12.6, TensorRT 10.3, torch 2.8 / 2.5 & 29\,GB visible; INA3221 rails\\
+Jetson Orin Nano 8\,GB (sm\_87) & JetPack R36.5.0, CUDA 12.6, TensorRT 10.3, torch 2.8 & 7.6\,GB shared CPU/GPU DRAM\\\bottomrule
+\end{tabular}}
+
+\medskip
+Models: Kev-0.8B (all devices), Kev-4B and Kev-9B (AGX, PyTorch path). Kev's PyTorch path on the AGX uses torch~2.5 with flash-linear-attention (Triton~3.8); on the server it uses the reference DeltaNet kernels.
+
+\section{Method}
+All serving numbers use Kev's own \texttt{scripts/serving\_bench.py} procedure, imported rather than re-written; \texttt{scripts/trt\_serving\_bench.py} only swaps the model behind \texttt{kev.serve.Server}.
+\begin{itemize}
+\item \textbf{Latency}: model time per request as the server reports it (\texttt{latency\_ms}), median of 20 after two warm-ups, for a new state and for the same state again (prefix-cache hit), on upstream's four request shapes: 2 or 6 questions on a short ticket, 5 questions on a 370-token and on a 2{,}200-token state.
+\item \textbf{Throughput}: requests/s with p50/p99 at 1, 8, 32 and 64 concurrent clients (a first pass to meet batch shapes, then a timed pass) on the README traffic, decision-v7 development traffic and 2{,}200-token documents.
+\item \textbf{Accuracy}: every non-PyTorch program is checked against fp32 PyTorch on \texttt{evals/smoke-v1} development (30 records, 40 questions): maximum $|\Delta p|$ and argmax flips. For scale, Kev's README reports its own bf16 serving path at up to $\sim$0.03 from fp32.
+\item \textbf{Energy}: INA3221 rails sampled at 100\,Hz (AGX \texttt{VIN\_SYS\_5V0}; Nano \texttt{VDD\_IN}). Server energy is not reported (shared card, \texttt{nvidia-smi} sees card power only).
+\end{itemize}
+
+\section{What had to be built}
+\begin{itemize}
+\item \textbf{A TensorRT-lowerable recurrence} (\texttt{kev/trt\_ops.py}). Upstream runs the DeltaNet recurrence as a CPU or Apple-GPU custom op. We use the chunked algorithm with a static chunk count, exact masked padding (pads get $\beta{=}0$ and no decay), and a blocked unit-lower-triangular inverse. A power-series inverse is exact in exact arithmetic but produced NaNs and 8--9 flips on real activations, because Kev's L2-normalised keys make its terms grow to $\sim10^{17}$. Verified against the token-by-token definition to $\le 9\times10^{-6}$, including adversarial inputs.
+\item \textbf{A static-shape program for TensorRT~10.3} (\texttt{kev/trt\_static.py}). JetPack~6's TensorRT cannot build the dynamic-shape graph (``Could not find any implementation for node''). A fixed-shape prefill engine plus bucketed score engines with explicit lengths build and stay exact. TF32 had to be disabled: it moved the recurrent state by $4\times10^{-4}$.
+\item \textbf{Mixed fp16}: fp16 GEMMs with the recurrence, norms and pointer head in fp32, as strongly typed engines. This halves engine memory.
+\item \textbf{A raw-engine runtime for 8\,GB boards} (\texttt{kev/trt\_runtime.py}). Torch-TensorRT's loader holds the archive, the base64 engine text and the engine at once ($\sim$3$\times$). The engines themselves need only 273\,MB and 155\,MB of activation memory. Raw engines are extracted on the AGX (same sm\_87 and TensorRT~10.3.0) and deserialised directly on the Nano, sharing one activation buffer. Peak GPU memory on the Nano is 1.0\,GB.
+\end{itemize}
+
+\section{Accuracy}
+\begin{table}[h]\centering\small
+\caption{Parity vs fp32 PyTorch on smoke-v1 (max $|\Delta p|$ / argmax flips).}\label{tab:parity}
+\begin{tabular}{llcc}\toprule
+Program & Device & max $|\Delta p|$ & flips\\\midrule
+Dynamic, fp32, TensorRT 11.3 & RTX 6000 Ada & $1.0\times10^{-6}$ & 0 / 40\\
+Static, fp32 (eager) & Orin AGX & $9.2\times10^{-7}$ & 0 / 40\\
+Static, mixed fp16, TensorRT 11.3 & RTX 6000 Ada & $4.1\times10^{-3}$ & 0 / 32\\
+Static, mixed fp16, TensorRT 10.3, raw-engine runtime & \textbf{Orin Nano} & $4.8\times10^{-3}$ & 0 / 32\\
+ExecuTorch XNNPACK fp32 (CPU) & Orin AGX & $3.0\times10^{-6}$ & 0 / 40\\\bottomrule
+\end{tabular}\end{table}
+The 32-question rows exclude 8 questions whose rows exceed that program's 512-token context.
+
+\section{Serving results}
+\input{tables.tex}
+\FloatBarrier
+
+\paragraph{Findings.}
+\begin{enumerate}
+\item \textbf{The current Kev family now runs on an 8\,GB Orin Nano}, only under TensorRT: 767\,/\,513\,ms, 1.30 requests/s, $\sim$8.2\,J per request on the module rail, 0 flips. Kev's PyTorch path does not run there. JetPack~6's cuSOLVER cannot back the reference DeltaNet's triangular solve, and flash-linear-attention's Triton kernels do not load against that board's torch.
+\item \textbf{On the workstation GPU}, the fp32 TensorRT program beats Kev's PyTorch bf16 path (46 vs 94\,ms new, 11 vs 49\,ms cached, short case). That baseline uses reference DeltaNet kernels; upstream's README figures use flash-linear-attention and CUDA graphs.
+\item \textbf{On the AGX, TensorRT only matches PyTorch, and only in mixed fp16}: 235 vs 246\,ms new, 156 vs 126\,ms cached. fp32 static engines are 2.4$\times$ slower. Static shapes pay for padding, so every request costs the same.
+\item \textbf{The TensorRT programs do not batch}: Kev's server batches queued requests, while the static programs answer one at a time. Throughput is flat from 1 to 64 clients (AGX: 4.2 vs 7.0 requests/s for PyTorch at 64).
+\end{enumerate}
+
+\section{Low-precision quantization}
+\input{tables_quant.tex}
+\FloatBarrier
+\begin{itemize}
+\item \textbf{INT8 works on Orin.} Weight-only stays well inside the $\sim$0.03 Kev accepts for bf16 serving; SmoothQuant is looser (0.059). Neither changes an answer. Neither is faster than mixed fp16 at this request size; weight-only lowers peak GPU memory (2.01 vs 2.90\,GiB).
+\item \textbf{INT4 fails on two counts}: it already changes answers fake-quantized (1--2 of 32), and Torch-TensorRT~2.8, the only Jetson build, cannot convert 4-bit Q/DQ.
+\item \textbf{FP8 on Orin}: TensorRT refuses the build, ``Networks with FP8 Q/DQ layers require hardware with FP8 support''. Orin's Ampere-class tensor cores (sm\_87) do FP16/BF16/TF32/INT8 but have no FP8 instructions, which need Ada (sm\_89) or Hopper (sm\_90). FP8 storage with dequantisation would still save memory, but gives no speed-up. On the RTX 6000 Ada the FP8 engines build and run (22\,ms), but ModelOpt's default recipe yields NaNs on this model.
+\end{itemize}
+
+\section{ExecuTorch}
+\textbf{XNNPACK on the AGX CPU}: exported on the board with ExecuTorch's own \texttt{examples/kev/export.py}, from a Python~3.13 environment because ExecuTorch's aarch64 wheels are cp313/cp314 and JetPack~6 is 3.10. Kev\#69's two XNNPACK partitioner files from ExecuTorch \texttt{main} were applied over the wheel. The program is 3.08\,GB and was exported in 11\,min~54\,s. Served through \#69's \texttt{ExecuTorchDecisionModel}: fp32-exact ($3.0\times10^{-6}$, 0 flips), 0.9--4.5\,s per request (Table~\ref{tab:latency}).
+
+\smallskip\noindent\textbf{TensorRT-delegate \texttt{.pte} on Jetson is blocked} by three independent gaps:
+(1)~no Jetson build of the exporter: \texttt{torch\_tensorrt.executorch} needs Torch-TensorRT~$\ge$2.15, and JetPack~6 has 2.8;
+(2)~a \texttt{.pte}'s engines load only on the TensorRT version and GPU that built them, so a server-built one cannot run on the boards;
+(3)~no Jetson build of the delegate runtime (\texttt{torch\_tensorrt\_executorch\_runtime}).
+On x86 the program was made to export with the ranges \#69's backend actually sends (one-token prefill, one-question score), and \texttt{load\_program} now registers the TensorRT delegate. The export was still running at the time of writing.
+
+\section{Deviations and caveats}
+\begin{itemize}
+\item \textbf{No throughput for the XNNPACK program.} Upstream's 1/8/32/64-client sweep would have taken $\sim$4\,h on the CPU. It was stopped at the user's request, restarted at 1 client, and that run was stopped too when all AGX workloads were cleared. Its latency is the full procedure.
+\item The AGX 2{,}240-token fp32 program's throughput was run on 2{,}200-token documents only; short traffic on it would only measure padding.
+\item The fixed-shape programs reject questions longer than their largest engine: 24 of 256 decision-v7 requests on the Nano and on the server's 128-row program. They are counted, not dropped silently.
+\item Kev-9B on the AGX was loaded with the LoRA unmerged: the fp32 merge needs $\sim$36\,GB.
+\item Energy rails differ between boards (AGX \texttt{VIN\_SYS\_5V0}, Nano \texttt{VDD\_IN}), so compare energy within a board only.
+\end{itemize}
+
+\section{Open items}
+x86 TensorRT \texttt{.pte} through \#69's backend (parity and README benchmark); a 2{,}200-token program on the Nano; request batching in the static programs; Kev-4B under TensorRT (mixed fp16 / INT8); full decision-v7 parity for each program; ExecuTorch on the Orin Nano.
+
+\medskip\noindent\small All raw JSON, cleaned logs and the scripts that produced every number are in \texttt{runs/trt-jetson/}, \texttt{scripts/} and \texttt{docs/jetson-tensorrt.md} of the fork.
+\end{document}

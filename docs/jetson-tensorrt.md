@@ -232,23 +232,23 @@ prefix [1, 384].
 (the DeltaNet recurrence, norms and pointer head keep their precision), calibrated on 64 decision-v7 development records
 through Kev's own serving path; each config checked fake-quantized first, then as TensorRT engines on the device. Parity on
 smoke-v1 (32 questions; 8 rejected by the 512-token rows of this program). Reference: mixed fp16 on the AGX, 235.5 ms p50,
-2.97 GB peak.
+2.90 GiB peak.
 
 | config | device | fake-quant max \|Δp\| / flips | TensorRT | engine parity | p50 | peak GPU |
 |---|---|---|---|---|---|---|
-| INT8 weight-only | Orin AGX (sm_87, TRT 10.3) | 0.012 / 0 | **built** (364 + 347 s) | **0.013 / 0** | 234.5 ms | 2.06 GB |
-| INT8 SmoothQuant (W8A8) | Orin AGX | 0.071 / 0 | **built** (416 + 361 s) | 0.059 / 0 | 224.2 ms | 3.03 GB |
+| INT8 weight-only | Orin AGX (sm_87, TRT 10.3) | 0.012 / 0 | **built** (364 + 347 s) | **0.013 / 0** | 234.5 ms | 2.01 GiB |
+| INT8 SmoothQuant (W8A8) | Orin AGX | 0.071 / 0 | **built** (416 + 361 s) | 0.059 / 0 | 224.2 ms | 2.96 GiB |
 | INT4 AWQ (W4) | Orin AGX | 0.33 / **1** | failed: Torch-TensorRT 2.8 *"quantize converter currently only accept INT8 or FP8 based quantize, got num_bits=4"* | — | — | — |
 | INT4 blockwise weight-only | Orin AGX | 0.23 / **2** | failed: same converter limit | — | — | — |
 | FP8 | Orin AGX | 0.050 / 0 | **failed: TensorRT *"Networks with FP8 Q/DQ layers require hardware with FP8 support"*** | — | — | — |
-| FP8 | RTX 6000 Ada (sm_89, TRT 11.3) | 0.037 / 0 | built (167 + 154 s) | **NaN, 19 / 32 flips** | 22.4 ms | 2.01 GB |
+| FP8 | RTX 6000 Ada (sm_89, TRT 11.3) | 0.037 / 0 | built (167 + 154 s) | **NaN, 19 / 32 flips** | 22.4 ms | 1.96 GiB |
 | INT8 weight-only | RTX 6000 Ada | 0.012 / 0 | failed: ModelOpt CUDA extension (`fake_tensor_quant_with_axis`) missing in that nightly env | — | — | — |
 
 What this says:
 
 * **INT8 works on Orin.** Weight-only INT8 stays well inside the ~0.03 kev accepts for its own bf16 serving and changes no
   answer; SmoothQuant W8A8 is looser (0.059) but also changes none. At this request size neither is faster than mixed fp16
-  (224–235 vs 235 ms): the GEMMs are not the bottleneck. Weight-only INT8 lowers peak memory (2.06 vs 2.97 GB).
+  (224–235 vs 235 ms): the GEMMs are not the bottleneck. Weight-only INT8 lowers peak GPU memory (2.01 vs 2.90 GiB).
 * **INT4 is out on two counts** at 0.8B: it already changes answers fake-quantized (1–2 of 32), and Torch-TensorRT 2.8 — the
   only Jetson build — cannot convert 4-bit Q/DQ at all.
 * **FP8 on Orin fails for the hardware reason stated**, now measured: TensorRT refuses FP8 Q/DQ networks on sm_87. On an

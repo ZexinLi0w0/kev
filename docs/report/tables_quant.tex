@@ -1,0 +1,13 @@
+\begin{table}[!htbp]\centering\small
+\caption{Low-precision quantization (NVIDIA ModelOpt 0.47) of the static mixed-fp16 Kev-0.8B program: backbone Linear layers only. Parity vs fp32 PyTorch on smoke-v1 (max $|\Delta p|$ / argmax flips, 32 questions).}\label{tab:quant}
+\resizebox{\textwidth}{!}{\begin{tabular}{llcllcc}\toprule
+Config & Device & Fake-quant & TensorRT build & Engine parity & p50 (ms) & Peak GPU (GiB) \\\midrule
+INT8 weight-only & Orin AGX 32GB (sm\_87) & 0.012 / 0 & built & 0.013 / 0 & 234.486 & 2.01 \\
+INT8 SmoothQuant (W8A8) & Orin AGX 32GB (sm\_87) & 0.071 / 0 & built & 0.059 / 0 & 224.245 & 2.96 \\
+INT4 AWQ & Orin AGX 32GB (sm\_87) & 0.329 / 1 & failed: no 4-bit converter & -- & -- & -- \\
+FP8 & Orin AGX 32GB (sm\_87) & 0.050 / 0 & failed: no FP8 hardware & -- & -- & -- \\
+INT4 blockwise W-only & Orin AGX 32GB (sm\_87) & 0.229 / 2 & failed: no 4-bit converter & -- & -- & -- \\
+FP8 & RTX 6000 Ada (sm\_89) & 0.037 / 0 & built & NaN / 19 & 22.375 & 1.96 \\
+INT8 weight-only & RTX 6000 Ada (sm\_89) & 0.012 / 0 & failed: env (ModelOpt ext.) & -- & -- & -- \\
+\bottomrule\end{tabular}}\end{table}
+
